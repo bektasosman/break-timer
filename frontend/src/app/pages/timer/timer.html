@@ -1,0 +1,22 @@
+<div class="timer-card">
+  <div class="timer-header">
+    <div class="timer-name">Timer Name</div>
+    <div class="project-name">Projektname</div>
+  </div>
+
+  <div class="timer-display">
+    <!-- Hier rufen wir das berechnete Signal auf -->
+    <h1 class="time">{{ displayTime }}</h1>
+    <!-- Hier rufen wir den Status auf -->
+    <h2 class="status">{{ status() }}</h2>
+    <span class="sub-text">or sprint?</span>
+  </div>
+
+  <div class="timer-actions">
+    <!-- Start & Stop über Klicks steuern -->
+    <button class="btn btn-start" (click)="startTimer()">Start</button>
+    <button class="btn btn-stop" (click)="stopTimer()">Stop</button>
+    <button class="btn btn-finish" (click)="finishTimer()">Finish</button>
+    <button class="btn btn-configure" routerLink="/config">Configure</button>
+  </div>
+</div>
