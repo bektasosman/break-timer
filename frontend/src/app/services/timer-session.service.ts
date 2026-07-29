@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface TimerSessionResponse {
-  sessionId: number;
+  id: number;
   status: string;
   workedDuration: string;
   expectedFinishTime: string;

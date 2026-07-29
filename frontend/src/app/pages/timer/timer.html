@@ -5,17 +5,33 @@
   </div>
 
   <div class="timer-display">
-    <!-- Hier rufen wir das berechnete Signal auf -->
-    <h1 class="time">{{ displayTime }}</h1>
-    <!-- Hier rufen wir den Status auf -->
-    <h2 class="status">{{ status() }}</h2>
+    <h1 class="time">{{ displayTime() }}</h1>
+    
+    <!-- Dynamische Status-Texte basierend auf Ihrem Java-Enum -->
+    <h2 class="status">
+      @if (status() === 'IDLE') { Bereit }
+      @else if (status() === 'RUNNING_WORK') { Fokuszeit }
+      @else if (status() === 'PAUSED_WORK') { Pause (Arbeit) }
+      @else if (status() === 'RUNNING_BREAK') { Pause läuft }
+      @else if (status() === 'FINISHED') { Fertig! }
+    </h2>
+    
     <span class="sub-text">or sprint?</span>
   </div>
 
   <div class="timer-actions">
-    <!-- Start & Stop über Klicks steuern -->
-    <button class="btn btn-start" (click)="startTimer()">Start</button>
-    <button class="btn btn-stop" (click)="stopTimer()">Stop</button>
+    <!-- Der Start-Button zeigt "Weiter", wenn pausiert wurde -->
+    @if (status() !== 'RUNNING_WORK' && status() !== 'RUNNING_BREAK') {
+      <button class="btn btn-start" (click)="startTimer()">
+        {{ status() === 'PAUSED_WORK' ? 'Weiter' : 'Start' }}
+      </button>
+    }
+
+    <!-- Stop-Button nur zeigen, wenn der Timer aktiv läuft -->
+    @if (status() === 'RUNNING_WORK' || status() === 'RUNNING_BREAK') {
+      <button class="btn btn-stop" (click)="stopTimer()">Stop</button>
+    }
+
     <button class="btn btn-finish" (click)="finishTimer()">Finish</button>
     <button class="btn btn-configure" routerLink="/config">Configure</button>
   </div>

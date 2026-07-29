@@ -37,9 +37,10 @@ public class TimerSessionService {
     }
 
     public TimerSessionResponse pauseTimer(Long sessionId) {
+        Instant now = Instant.now();
         TimerSession session = timerSessionRepo.findById(sessionId).orElseThrow();
         session.setStatus(Status.PAUSED_WORK);
-        addWorkedTime(session);
+        addWorkedTime(session, now);
         session = timerSessionRepo.save(session);
         scheduler.cancelFinish(session.getSessionId());
         return TimerSessionMapper.toResponse(session);
@@ -66,9 +67,10 @@ public class TimerSessionService {
     }
 
     public TimerSessionResponse finishTimer(Long sessionId) {
+        Instant now = Instant.now();
         TimerSession session = timerSessionRepo.findById(sessionId).orElseThrow();
         if (session.getStatus() == Status.RUNNING_WORK) {
-            addWorkedTime(session);
+            addWorkedTime(session, now);
         }
         session.setStatus(Status.FINISHED);
         TimerSession saved = timerSessionRepo.save(session);
@@ -76,10 +78,10 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(saved);
     }
 
-    private static void addWorkedTime(TimerSession session) {
+    private static void addWorkedTime(TimerSession session, Instant now) {
         Duration currentWork = Duration.between(
                 session.getCurrentStartTime(),
-                Instant.now()
+                now
         );
         session.setWorkedDuration(
                 session.getWorkedDuration().plus(currentWork)
