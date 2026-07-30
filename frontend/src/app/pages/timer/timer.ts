@@ -14,7 +14,7 @@ export class TimerComponent implements OnInit {
   private configService = inject(TimerConfigService);
 
   // Status hält jetzt exakt die Strings aus Ihrem Java-Enum
-  protected status = signal<'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'FINISHED' | 'IDLE'>('IDLE');
+  protected status = signal<'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'PAUSED_BREAK' | 'FINISHED'>('PAUSED_WORK');
   protected displayTime = signal('00:00');
 
   private currentSessionId: number | null = null;
@@ -43,48 +43,41 @@ export class TimerComponent implements OnInit {
   }
 
   protected startTimer(): void {
-  if (this.status() === 'PAUSED_WORK' && this.currentSessionId) {
-    // Fortsetzen: Sofort weiterlaufen lassen
-    this.startLocalCountdown();
-    this.status.set('RUNNING_WORK');
+    // FALL 1: Timer war in der Fokuszeit pausiert -> Einfach fortsetzen
+    if (this.status() === 'PAUSED_WORK' && this.currentSessionId) {
+      this.startLocalCountdown();
+      this.status.set('RUNNING_WORK');
 
-    this.sessionService.continueTimer(this.currentSessionId).subscribe({
-      next: (session) => this.status.set(session.status as any),
-      error: (err) => this.rollbackStart('PAUSED_WORK')
-    });
-  } else if (this.activeConfigId) {
-    // Komplett NEUER Start:
-    // 1. UI sofort auf 25 Minuten zurücksetzen (falls vorher gefinisht wurde)
-    const config = this.defaultConfig();
-    if(config)
-    this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
-    this.updateDisplay();
+      this.sessionService.continueTimer(this.currentSessionId).subscribe({
+        next: (session) => this.status.set(session.status as any)
+      });
+    }
+    // FALL 2: Die Pause wurde vorbereitet und soll JETZT starten
+    else if (this.status() === 'PAUSED_BREAK') {
+      this.startLocalCountdown();
+      this.status.set('RUNNING_BREAK'); // Pause läuft jetzt im UI!
 
-    // 2. Countdown sofort visuell starten!
-    this.startLocalCountdown();
-    this.status.set('RUNNING_WORK');
+      // Optional: Hier könnten Sie einen Endpunkt im Backend triggern, 
+      // falls Sie auch die Pause als eigene Session tracken wollen.
+    }
+    // FALL 3: Komplett neuer Start der Fokuszeit (aus IDLE oder nach beendeter Pause)
+    else if (this.activeConfigId) {
+      const config = this.defaultConfig();
+      if (config)
+        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
+      this.updateDisplay();
 
-    // 3. Im Hintergrund die Session in Spring Boot erstellen
-    this.sessionService.startTimer(this.activeConfigId).subscribe({
-      next: (session: TimerSessionResponse) => {
-        // Die echte Session ID vom Server im Nachhinein einspeichern
-        this.currentSessionId = session.id;
-      },
-      error: (err) => {
-        console.error('Fehler beim Backend-Start:', err);
-        // Bei einem Fehler rollen wir die UI wieder zurück
-        this.rollbackStart('IDLE');
-      }
-    });
+      this.startLocalCountdown();
+      this.status.set('RUNNING_WORK');
+
+      this.sessionService.startTimer(this.activeConfigId).subscribe({
+        next: (session: TimerSessionResponse) => {
+          this.currentSessionId = session.id;
+        }
+      });
+    }
   }
-}
 
-// Kleine Hilfsfunktion für den Fehlerfall
-private rollbackStart(fallbackStatus: any): void {
-  this.stopLocalCountdown();
-  this.status.set(fallbackStatus);
-  alert('Verbindung zum Server fehlgeschlagen.');
-}
 
   protected stopTimer(): void {
     if (!this.currentSessionId) return;
@@ -100,14 +93,33 @@ private rollbackStart(fallbackStatus: any): void {
   protected finishTimer(): void {
     if (!this.currentSessionId) return;
 
+    // 1. Lokalen Countdown sofort stoppen
+    this.stopLocalCountdown();
+
+    const config = this.defaultConfig();
+
+    // 2. Kamen wir aus der Arbeitszeit (WORK)?
+    if (this.status() === 'RUNNING_WORK' || this.status() === 'PAUSED_WORK') {
+      // Wir wechseln in den Zustand "PAUSE_BEREIT" (Wir nutzen dafür ein neues Label im Signal)
+      this.status.set('PAUSED_BREAK'); // Pausen-Modus ist vorbereitet, läuft aber noch nicht
+
+      // Pausenzeit laden (z.B. 5 Min), aber NICHT startLocalCountdown() aufrufen!
+      if (config)
+        this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
+      this.updateDisplay();
+    } else {
+      // Wenn wir schon in der Pause waren und Finish drücken -> Komplett zurück auf Anfang (Arbeit)
+      this.status.set('PAUSED_WORK');
+      if (config)
+        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
+      this.updateDisplay();
+    }
+
+    // 3. Backend im Hintergrund informieren
     this.sessionService.finishTimer(this.currentSessionId).subscribe({
       next: (session: TimerSessionResponse) => {
-        this.status.set(session.status as any); // Setzt den Status auf FINISHED
-        this.stopLocalCountdown();
-        this.remainingSeconds = 0;
-        this.updateDisplay();
-      },
-      error: (err) => console.error('Fehler beim Beenden:', err)
+        console.log('Arbeits-Session erfolgreich beendet.');
+      }
     });
   }
 
