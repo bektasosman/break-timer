@@ -1,38 +1,29 @@
-<div class="timer-card">
-  <div class="timer-header">
-    <div class="timer-name">Timer Name</div>
-    <div class="project-name">Projektname</div>
+<!-- Die Klasse wechselt dynamisch zwischen 'theme-work' und 'theme-break' -->
+<div class="timer-card" [class.theme-work]="activeTab() === 'work'" [class.theme-break]="activeTab() === 'break'">
+  
+  <!-- Das Tab-Menü oben -->
+  <div class="timer-tabs">
+    <button [class.active]="activeTab() === 'work'" (click)="switchTab('work')">Work</button>
+    <button [class.active]="activeTab() === 'break'" (click)="switchTab('break')">Break</button>
   </div>
 
+  <!-- Die Zeitanzeige -->
   <div class="timer-display">
     <h1 class="time">{{ displayTime() }}</h1>
-
-    <!-- Dynamische Status-Texte basierend auf Ihrem Java-Enum -->
-    <h2 class="status">
-      @if (status() === 'PAUSED_WORK') { Fokus }
-      @else if (status() === 'RUNNING_WORK') { Fokuszeit läuft }
-      @else if (status() === 'PAUSED_WORK') { Fokus pausiert }
-      @else if (status() === 'PAUSED_BREAK') { Pause }
-      @else if (status() === 'RUNNING_BREAK') { Pause läuft }
-    </h2>
-
-    <span class="sub-text">or sprint?</span>
   </div>
 
+  <!-- Die neuen Buttons unten -->
   <div class="timer-actions">
-    <!-- Der Start-Button zeigt "Weiter", wenn pausiert wurde -->
-    @if (status() !== 'RUNNING_WORK' && status() !== 'RUNNING_BREAK') {
-    <button class="btn btn-start" (click)="startTimer()">
-      {{ status() === 'PAUSED_WORK' ? 'Weiter' : 'Start' }}
+    <!-- Kombi-Button: Wechselt Text je nach Status -->
+    <button class="btn btn-toggle" (click)="toggleTimer()">
+      {{ status() === 'RUNNING' ? 'Pause' : 'Start' }}
     </button>
-    }
+    
+    <!-- Skip Button daneben -->
+    <button class="btn btn-skip" (click)="skipSession()">
+      ⏭ Skip
+    </button>
 
-    <!-- Stop-Button nur zeigen, wenn der Timer aktiv läuft -->
-    @if (status() === 'RUNNING_WORK' || status() === 'RUNNING_BREAK') {
-    <button class="btn btn-stop" (click)="stopTimer()">Stop</button>
-    }
-
-    <button class="btn btn-finish" (click)="finishTimer()">Finish</button>
     <button class="btn btn-configure" routerLink="/config">Configure</button>
   </div>
 </div>

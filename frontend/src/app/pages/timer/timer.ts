@@ -1,7 +1,8 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, Inject } from '@angular/core'; // inject & Inject importieren
+import { DOCUMENT } from '@angular/common'; // DOCUMENT importieren
 import { RouterLink } from '@angular/router';
-import { TimerSessionService, TimerSessionResponse } from '../../services/timer-session.service';
-import { TimerConfigResponse, TimerConfigService } from '../../services/timer-config.service';
+import { TimerSessionService } from '../../services/timer-session.service';
+import { TimerConfigService , TimerConfigResponse} from '../../services/timer-config.service';
 
 @Component({
   selector: 'app-root-timer',
@@ -13,128 +14,122 @@ export class TimerComponent implements OnInit {
   private sessionService = inject(TimerSessionService);
   private configService = inject(TimerConfigService);
 
-  // Status hält jetzt exakt die Strings aus Ihrem Java-Enum
-  protected status = signal<'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'PAUSED_BREAK' | 'FINISHED'>('PAUSED_WORK');
-  protected displayTime = signal('00:00');
+  // Zugriff auf das globale Dokument des Browsers erhalten
+  private document = inject(DOCUMENT);
 
-  private currentSessionId: number | null = null;
+  protected activeTab = signal<'work' | 'break'>('work');
+  protected status = signal<'RUNNING' | 'PAUSED' | 'IDLE'>('IDLE');
+  protected displayTime = signal('25:00');
+
+  protected currentSessionId: number | null = null;
   private activeConfigId: number | null = null;
-
   private countdownInterval: any = null;
   private remainingSeconds = 0;
+
   private defaultConfig = signal<TimerConfigResponse | null>(null);
 
 
   ngOnInit(): void {
     this.configService.getAll().subscribe({
       next: (configs) => {
+        // Prüfen, ob das Array existiert und mindestens einen Eintrag hat
         if (configs && configs.length > 0) {
-          this.defaultConfig.set(configs[0]);
-          const config = this.defaultConfig();
-          if (config) {
-            this.activeConfigId = config.id;
-            this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
-            this.updateDisplay();
-          }
+
+          // Greife auf das erste Element des Arrays zu [0]
+          const firstConfig = configs[0];
+
+          // Jetzt befüllen wir das Signal und die IDs mit dem echten Objekt
+          this.defaultConfig.set(firstConfig);
+          this.activeConfigId = firstConfig.id;
+
+          // Initial den Tab setzen (rechnet intern jetzt mit firstConfig)
+          this.switchTab('work');
         }
       },
       error: (err) => console.error('Fehler beim Laden der Konfigurationen:', err)
     });
   }
 
-  protected startTimer(): void {
-    // FALL 1: Timer war in der Fokuszeit pausiert -> Einfach fortsetzen
-    if (this.status() === 'PAUSED_WORK' && this.currentSessionId) {
-      this.startLocalCountdown();
-      this.status.set('RUNNING_WORK');
-
-      this.sessionService.continueTimer(this.currentSessionId).subscribe({
-        next: (session) => this.status.set(session.status as any)
-      });
-    }
-    // FALL 2: Die Pause wurde vorbereitet und soll JETZT starten
-    else if (this.status() === 'PAUSED_BREAK') {
-      this.startLocalCountdown();
-      this.status.set('RUNNING_BREAK'); // Pause läuft jetzt im UI!
-
-      // Optional: Hier könnten Sie einen Endpunkt im Backend triggern, 
-      // falls Sie auch die Pause als eigene Session tracken wollen.
-    }
-    // FALL 3: Komplett neuer Start der Fokuszeit (aus IDLE oder nach beendeter Pause)
-    else if (this.activeConfigId) {
-      const config = this.defaultConfig();
-      if (config)
-        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
-      this.updateDisplay();
-
-      this.startLocalCountdown();
-      this.status.set('RUNNING_WORK');
-
-      this.sessionService.startTimer(this.activeConfigId).subscribe({
-        next: (session: TimerSessionResponse) => {
-          this.currentSessionId = session.id;
-        }
-      });
-    }
-  }
-
-
-  protected stopTimer(): void {
-    if (!this.currentSessionId) return;
+  protected switchTab(tab: 'work' | 'break'): void {
     this.stopLocalCountdown();
-    this.sessionService.pauseTimer(this.currentSessionId).subscribe({
-      next: (session: TimerSessionResponse) => {
-        this.status.set(session.status as any); // Setzt den Status auf PAUSED_WORK
-      },
-      error: (err) => console.error('Fehler beim Pausieren:', err)
-    });
-  }
+    this.status.set('IDLE');
+    this.activeTab.set(tab);
 
-  protected finishTimer(): void {
-    if (!this.currentSessionId) return;
-
-    // 1. Lokalen Countdown sofort stoppen
-    this.stopLocalCountdown();
-
-    const config = this.defaultConfig();
-
-    // 2. Kamen wir aus der Arbeitszeit (WORK)?
-    if (this.status() === 'RUNNING_WORK' || this.status() === 'PAUSED_WORK') {
-      // Wir wechseln in den Zustand "PAUSE_BEREIT" (Wir nutzen dafür ein neues Label im Signal)
-      this.status.set('PAUSED_BREAK'); // Pausen-Modus ist vorbereitet, läuft aber noch nicht
-
-      // Pausenzeit laden (z.B. 5 Min), aber NICHT startLocalCountdown() aufrufen!
-      if (config)
-        this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
-      this.updateDisplay();
+    // Hintergrundfarbe anpassen
+    const body = this.document.body;
+    if (tab === 'work') {
+      body.classList.add('bg-work');
+      body.classList.remove('bg-break');
     } else {
-      // Wenn wir schon in der Pause waren und Finish drücken -> Komplett zurück auf Anfang (Arbeit)
-      this.status.set('PAUSED_WORK');
-      if (config)
-        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
-      this.updateDisplay();
+      body.classList.add('bg-break');
+      body.classList.remove('bg-work');
     }
 
-    // 3. Backend im Hintergrund informieren
-    this.sessionService.finishTimer(this.currentSessionId).subscribe({
-      next: (session: TimerSessionResponse) => {
-        console.log('Arbeits-Session erfolgreich beendet.');
+    // Daten aus dem Signal holen
+    const config = this.defaultConfig();
+    if (config) {
+      // Dynamisch die geladenen Zeiten aus Ihrem Backend parsen!
+      if (tab === 'work') {
+        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
+      } else {
+        this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
       }
-    });
+    } else {
+      // Fallback falls die DB leer ist
+      this.remainingSeconds = tab === 'work' ? 1500 : 300;
+    }
+
+    this.updateDisplay();
+  }
+
+  // Der kombinierte Start/Pause Button
+  protected toggleTimer(): void {
+    if (this.status() === 'RUNNING') {
+      // PAUSIEREN
+      this.stopLocalCountdown();
+      this.status.set('PAUSED');
+      if (this.currentSessionId) {
+        this.sessionService.pauseTimer(this.currentSessionId).subscribe();
+      }
+    } else {
+      // STARTEN / FORTSETZEN
+      this.startLocalCountdown();
+      this.status.set('RUNNING');
+
+      if (this.status() === 'PAUSED' && this.currentSessionId) {
+        this.sessionService.continueTimer(this.currentSessionId).subscribe();
+      } else if (this.activeConfigId && this.activeTab() === 'work') {
+        // Nur bei 'work' eine echte DB-Session starten
+        this.sessionService.startTimer(this.activeConfigId).subscribe({
+          next: (res) => this.currentSessionId = res.id
+        });
+      }
+    }
+  }
+
+  // Skip-Button finisht die aktuelle Session und wechselt den Tab
+  protected skipSession(): void {
+    if (this.currentSessionId && this.activeTab() === 'work') {
+      this.sessionService.finishTimer(this.currentSessionId).subscribe();
+    }
+
+    // Automatisch zum anderen Modus wechseln
+    if (this.activeTab() === 'work') {
+      this.switchTab('break');
+    } else {
+      this.switchTab('work');
+    }
   }
 
   // --- COUNTDOWN LOGIK ---
   private startLocalCountdown(): void {
     if (this.countdownInterval) return;
-
     this.countdownInterval = setInterval(() => {
       if (this.remainingSeconds > 0) {
         this.remainingSeconds--;
         this.updateDisplay();
       } else {
-        this.stopLocalCountdown();
-        // Hier könnte man automatisch die Pausen-Config laden, 
-        // da das Backend über den Scheduler die Session beendet/ändert.
+        this.skipSession(); // Wenn Zeit abgelaufen ist, automatisch skippen
       }
     }, 1000);
   }
@@ -147,11 +142,16 @@ export class TimerComponent implements OnInit {
   }
 
   private updateDisplay(): void {
+    // 1. Berechnen, wie viele Minuten und Sekunden übrig sind
     const minutes = Math.floor(this.remainingSeconds / 60);
     const seconds = this.remainingSeconds % 60;
-    this.displayTime.set(
-      `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
-    );
+
+    // 2. Führende Null hinzufügen (aus 5 wird "05")
+    const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const displaySeconds = seconds < 10 ? `0${seconds}` : seconds;
+
+    // 3. Das Signal mit dem neuen String füttern
+    this.displayTime.set(`${displayMinutes}:${displaySeconds}`);
   }
 
   private parseIsoDurationToSeconds(durationStr: string): number {
@@ -163,4 +163,5 @@ export class TimerComponent implements OnInit {
       (parseInt(matches[2] || '0', 10) * 60) +
       parseInt(matches[3] || '0', 10);
   }
+
 }

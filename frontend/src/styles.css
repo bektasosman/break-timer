@@ -1,1 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
+body.bg-work {
+  background-color: #ba4949 !important; /* Pomodoro-Rot */
+  transition: background-color 0.5s ease;
+}
+
+body.bg-break {
+  background-color: #388e3c !important; /* Pausen-Grün */
+  transition: background-color 0.5s ease;
+}
