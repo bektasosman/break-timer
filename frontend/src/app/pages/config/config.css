@@ -91,14 +91,30 @@ input:focus {
 }
 
 .btn-cancel {
-  background-color: transparent;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.08) !important; /* Ganz zarter, heller Hintergrund */
+  color: #ffffff !important; /* Strahlend weiße Schrift */
+  border: 1px solid rgba(255, 255, 255, 0.4) !important; /* Deutlich sichtbarer, feiner Rahmen */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Abstand zwischen Pfeil und Text */
+  transition: all 0.25s ease-in-out !important;
 }
 
+/* Wenn man mit der Maus über den Zurück-Button fährt */
 .btn-cancel:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #ffffff !important; /* Button wird vollflächig weiß */
+  color: #142337 !important; /* Schrift wird dunkel für perfekten Kontrast */
+  border-color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); /* Sanfter, weißer Leuchteffekt */
+  transform: translateY(-1px); /* Wandert minimal nach oben */
 }
+
+.btn-cancel:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
 
 /* Der Speicher-Button wird zum strahlend weißen Highlight */
 .btn-save {
