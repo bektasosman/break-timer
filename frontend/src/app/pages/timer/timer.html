@@ -1,5 +1,8 @@
-<!-- Die Klasse wechselt dynamisch zwischen 'theme-work' und 'theme-break' -->
-<div class="timer-card" [class.theme-work]="activeTab() === 'work'" [class.theme-break]="activeTab() === 'break'">
+<div class="timer-card">
+  <!-- Das Zahnrad-Icon oben rechts -->
+  <button class="icon-btn-configure" routerLink="/config" title="Einstellungen">
+    ⚙️
+  </button>
   
   <!-- Das Tab-Menü oben -->
   <div class="timer-tabs">
@@ -12,18 +15,14 @@
     <h1 class="time">{{ displayTime() }}</h1>
   </div>
 
-  <!-- Die neuen Buttons unten -->
+  <!-- Die Buttons unten -->
   <div class="timer-actions">
-    <!-- Kombi-Button: Wechselt Text je nach Status -->
     <button class="btn btn-toggle" (click)="toggleTimer()">
       {{ status() === 'RUNNING' ? 'Pause' : 'Start' }}
     </button>
     
-    <!-- Skip Button daneben -->
     <button class="btn btn-skip" (click)="skipSession()">
       ⏭ Skip
     </button>
-
-    <button class="btn btn-configure" routerLink="/config">Configure</button>
   </div>
 </div>

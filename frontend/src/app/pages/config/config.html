@@ -1,1 +1,57 @@
-<p>config works!</p>
+<div class="config-container">
+  <div class="config-card">
+    
+    <div class="config-header">
+      <h2>⚙️ Timer Einstellungen</h2>
+      <p>Erstelle eine individuelle Pomodoro-Konfiguration</p>
+    </div>
+
+    <!-- Formular -->
+    <form (ngSubmit)="saveConfig()">
+      <div class="form-group">
+        <label for="name">Name der Konfiguration</label>
+        <input type="text" id="name" name="name" [(ngModel)]="configModel.name" placeholder="z.B. Deep Work, Lernen..." required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="work">Fokuszeit (Minuten)</label>
+          <input type="number" id="work" name="workMinutes" [(ngModel)]="configModel.workMinutes" min="1" required>
+        </div>
+        <div class="form-group">
+          <label for="break">Pausenzeit (Minuten)</label>
+          <input type="number" id="break" name="breakMinutes" [(ngModel)]="configModel.breakMinutes" min="1" required>
+        </div>
+      </div>
+
+      <div class="config-actions">
+        <button type="button" class="btn-cancel" routerLink="/">Zurück zum Timer</button>
+        <button type="submit" class="btn-save">Hinzufügen</button>
+      </div>
+    </form>
+
+    <!-- NEU: Die Liste der gespeicherten Konfigurationen -->
+    <div class="config-list-section">
+      <h3>Deine Profile</h3>
+      
+      @if (allConfigs().length === 0) {
+        <p class="empty-hint">Noch keine Profile in der Datenbank gespeichert.</p>
+      } @else {
+        <div class="config-list">
+          @for (c of allConfigs(); track c.id) {
+            <div class="config-item">
+              <div class="item-info">
+                <span class="item-name">{{ c.name }}</span>
+                <span class="item-times">⏱ {{ formatDuration(c.workDuration) }} / ☕️ {{ formatDuration(c.breakDuration) }}</span>
+              </div>
+              <button class="btn-delete" (click)="deleteConfig(c.id, $event)" title="Löschen">
+                🗑️
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

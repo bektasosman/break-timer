@@ -83,3 +83,19 @@
   background-color: #f0f0f0;
   border: 1px solid #333;
 }
+.icon-btn-configure {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: transform 0.3s ease, opacity 0.2s;
+}
+
+.icon-btn-configure:hover {
+  opacity: 1;
+  transform: rotate(45deg); /* Dreht sich elegant beim Drüberfahren */
+}

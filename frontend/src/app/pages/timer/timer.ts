@@ -30,25 +30,22 @@ export class TimerComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.configService.getAll().subscribe({
-      next: (configs) => {
-        // Prüfen, ob das Array existiert und mindestens einen Eintrag hat
-        if (configs && configs.length > 0) {
+  this.configService.getAll().subscribe({
+    next: (configs: TimerConfigResponse[]) => { // Hier kommt das Array an!
+      if (configs && configs.length > 0) {
+        // Greife auf das erste Element des Arrays zu [0]
+        const firstConfig = configs[0];
 
-          // Greife auf das erste Element des Arrays zu [0]
-          const firstConfig = configs[0];
-
-          // Jetzt befüllen wir das Signal und die IDs mit dem echten Objekt
-          this.defaultConfig.set(firstConfig);
-          this.activeConfigId = firstConfig.id;
-
-          // Initial den Tab setzen (rechnet intern jetzt mit firstConfig)
-          this.switchTab('work');
-        }
-      },
-      error: (err) => console.error('Fehler beim Laden der Konfigurationen:', err)
-    });
-  }
+        this.defaultConfig.set(firstConfig);
+        this.activeConfigId = firstConfig.id;
+        this.switchTab('work');
+      } else {
+        // Fallback, falls die Datenbank komplett leer ist
+        this.switchTab('work');
+      }
+    }
+  });
+}
 
   protected switchTab(tab: 'work' | 'break'): void {
     this.stopLocalCountdown();
