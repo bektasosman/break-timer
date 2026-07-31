@@ -6,18 +6,19 @@
   font-family: sans-serif;
 }
 
-/* Die Config-Box im selben Premium-Glas-Look wie der Timer */
+/* Die Config-Box im kontrastreichen Deep-Blue Glas-Look */
 .config-card {
-  background-color: rgba(255, 255, 255, 0.22) !important; /* Heller Milchglas-Schimmer */
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  /* Ein schickes, abgedunkeltes Blau-Grau mit Transparenz */
+  background-color: rgba(20, 35, 55, 0.65) !important; 
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 16px;
   padding: 30px;
   width: 100%;
   max-width: 460px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-  color: #ffffff; /* Schriften auf dem Glas sind jetzt weiß */
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten für Tiefe */
+  color: #ffffff; 
 }
 
 .config-header h2 {
@@ -99,10 +100,11 @@ input:focus {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Der Speicher-Button wird zum strahlend weißen Highlight */
 .btn-save {
   background-color: #ffffff;
-  color: #4a90e2 !important; /* Button-Schrift passend im Config-Blau */
-  box-shadow: 0 4px 0px rgba(0, 0, 0, 0.1);
+  color: #142337 !important; /* Dunkle Schrift auf weißem Button */
+  box-shadow: 0 4px 0px rgba(0, 0, 0, 0.2);
 }
 
 .btn-save:active {
@@ -113,7 +115,7 @@ input:focus {
 /* Profil-Liste unten */
 .config-list-section {
   margin-top: 30px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding-top: 20px;
 }
 
@@ -130,39 +132,59 @@ input:focus {
   font-style: italic;
 }
 
+/* Der Container für die Profile */
 .config-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 180px;
-  overflow-y: auto;
+  max-height: 280px; /* Etwas mehr Platz nach unten gewähren */
+  overflow-y: auto; /* Erlaubt Scrollen im Hintergrund */
+  
+  /* --- HIER WIRD DER SCROLLBALKEN US-STYLE KOMPLETT UNSICHTBAR GEMACHT --- */
+  scrollbar-width: none; /* Für Firefox */
+  -ms-overflow-style: none; /* Für den alten Internet Explorer */
 }
 
-/* Die einzelnen Listeneinträge */
+/* Für Chrome, Safari und neuere Edge-Browser ebenfalls unsichtbar machen */
+.config-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Basis-Design für jedes Profil */
 .config-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 12px 15px;
-  transition: background-color 0.2s;
-  color: white;
+  background-color: rgba(255, 255, 255, 0.06); /* Ganz zarter Schleier */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Seidiger Übergang */
 }
 
-.config-item:hover {
-  background-color: rgba(255, 255, 255, 0.25);
+/* Hover-Effekt für inaktive Elemente */
+.config-item.clickable:not(.active-profile):hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .config-item.clickable {
   cursor: pointer;
 }
 
-/* Markierung für das aktuell im Timer ausgewählte Profil */
+/* === NEU: DAS AKTIVE PROFIL (Minimalistischer iOS-Style) === */
 .config-item.active-profile {
-  border: 1px solid #ffffff;
-  background-color: rgba(255, 255, 255, 0.35);
+  background-color: rgba(255, 255, 255, 0.95) !important; /* Fast deckendes, edles Weiß */
+  color: #142337 !important; /* Schrift wird dunkel für perfekten Kontrast */
+  border: 1px solid #ffffff !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: translateX(4px); /* Schiebt sich elegant ein Stück nach rechts heraus */
+}
+
+/* Sorgt dafür, dass die graue Unterzeitschrift beim aktiven Profil dunkelgrau wird */
+.config-item.active-profile .item-times {
+  color: #555555 !important;
 }
 
 .item-info {
@@ -173,34 +195,35 @@ input:focus {
 
 .item-name {
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 .item-times {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.6); /* Schickes, dezentes Grau-Weiß im Standard */
 }
 
-.badge {
-  background-color: #ffffff;
-  color: #4a90e2;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  margin-left: 5px;
-  font-weight: bold;
-}
-
+/* Die Mülltonne */
 .btn-delete {
   background: none;
   border: none;
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
+  padding: 6px;
+  border-radius: 6px;
   transition: background-color 0.2s;
 }
 
+/* Mülltonne passt sich farblich dem Zustand an */
+.config-item.active-profile .btn-delete {
+  color: #142337;
+}
+.config-item:not(.active-profile) .btn-delete {
+  color: #ffffff;
+  opacity: 0.6;
+}
+
 .btn-delete:hover {
-  background-color: rgba(244, 67, 54, 0.3); /* Roter Schimmer beim Löschen-Hover */
+  background-color: rgba(244, 67, 54, 0.2) !important;
+  opacity: 1 !important;
 }
