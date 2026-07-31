@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -18,6 +20,7 @@ import java.util.Objects;
 public class TimerSession {
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private TimerConfig timerConfig;
 
     private @Id

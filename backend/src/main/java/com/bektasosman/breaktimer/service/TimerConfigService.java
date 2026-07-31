@@ -8,8 +8,11 @@ import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
 import com.bektasosman.breaktimer.repository.TimerSessionRepository;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -21,16 +24,6 @@ public class TimerConfigService {
     public TimerConfigService(TimerConfigRepository timerConfigRepo, TimerSessionRepository timerSessionRepo, TimerScheduler scheduler) {
         this.timerConfigRepo = timerConfigRepo;
     }
-
-    // die Methode ist jetzt im TimerSessionService
-   /* public TimerSession startTimer(Long timerConfigId) {
-        TimerConfig timerConfig = timerConfigRepo.findById(timerConfigId).orElseThrow();
-        Instant expectedFinishTime = Instant.now().plus(timerConfig.getWorkDuration());
-        TimerSession session = new TimerSession(Instant.now(), null, Status.RUNNING_WORK, Duration.ZERO, expectedFinishTime, timerConfig);
-        TimerSession saved = timerSessionRepo.save(session);
-        scheduler.scheduleFinish(  session.getSessionId(), session.getExpectedFinishTime(), () -> finishTimer(session.getSessionId()));
-        return saved;
-    }*/
 
     public TimerConfigResponse createTimerConfig(CreateTimerConfigRequest dto) {
         TimerConfig entity = TimerConfigMapper.toEntity(dto);
@@ -61,6 +54,22 @@ public class TimerConfigService {
                 })
                 .orElseThrow(() -> new TimerNotFoundException(id));
         return TimerConfigMapper.toResponse(saved);
+    }
+
+    @Bean
+    public ApplicationRunner dataInitializer(TimerConfigRepository repository) {
+        return args -> {
+            if (repository.count() == 0) {
+                // Wir erstellen das feste Standard-Profil
+                TimerConfig defaultId = new TimerConfig(
+                        "Standard Pomodoro",
+                        Duration.ofMinutes(25),
+                        Duration.ofMinutes(5)
+                );
+                repository.save(defaultId);
+                System.out.println("🚀 Standard-Timer-Profil wurde erfolgreich initialisiert!");
+            }
+        };
     }
 
 }

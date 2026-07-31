@@ -44,19 +44,22 @@
       } @else {
       <div class="config-list">
         @for (c of allConfigs(); track c.id) {
-        <!-- Wenn es das aktive Profil ist, bekommt es das grüne/blaue Label-Design -->
         <div class="config-item clickable" [class.active-profile]="isConfigActive(c.id)" (click)="selectConfig(c)">
           <div class="item-info">
-            <span class="item-name">
-              {{ c.name }}
-              @if (isConfigActive(c.id)) { <small class="badge">(Aktiv)</small> }
-            </span>
+            <span class="item-name">{{ c.name }}</span>
             <span class="item-times">⏱ {{ formatDuration(c.workDuration) }} / ☕️ {{ formatDuration(c.breakDuration)
               }}</span>
           </div>
+
+          <!-- NEU: Mülltonne wird NUR angezeigt, wenn es NICHT der Standard-Timer ist -->
+          @if (c.name !== 'Standard Pomodoro') {
           <button class="btn-delete" (click)="deleteConfig(c.id, $event)" title="Löschen">
             🗑️
           </button>
+          } @else {
+          <!-- Optional: Ein kleines Schloss-Icon, das zeigt, dass dieses Profil geschützt ist -->
+          <span class="lock-icon" title="Standard-Profil kann nicht gelöscht werden">🔒</span>
+          }
         </div>
         }
       </div>
