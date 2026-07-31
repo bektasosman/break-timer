@@ -2,7 +2,7 @@ import { Component, OnInit, signal, inject, Inject } from '@angular/core'; // in
 import { DOCUMENT } from '@angular/common'; // DOCUMENT importieren
 import { RouterLink } from '@angular/router';
 import { TimerSessionService } from '../../services/timer-session.service';
-import { TimerConfigService , TimerConfigResponse} from '../../services/timer-config.service';
+import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
 
 @Component({
   selector: 'app-root-timer',
@@ -30,54 +30,73 @@ export class TimerComponent implements OnInit {
 
 
   ngOnInit(): void {
-  this.configService.getAll().subscribe({
-    next: (configs: TimerConfigResponse[]) => { // Hier kommt das Array an!
-      if (configs && configs.length > 0) {
-        // Greife auf das erste Element des Arrays zu [0]
-        const firstConfig = configs[0];
+    this.configService.getAll().subscribe({
+      next: (configs: TimerConfigResponse[]) => {
+        if (configs && configs.length > 0) {
 
-        this.defaultConfig.set(firstConfig);
-        this.activeConfigId = firstConfig.id;
-        this.switchTab('work');
-      } else {
-        // Fallback, falls die Datenbank komplett leer ist
+          // 1. Schauen, ob im Speicher eine ID hinterlegt ist
+          const savedIdStr = localStorage.getItem('selectedConfigId');
+          let targetConfig = configs[0]; // Standard-Fallback: Erstes Element
+
+          if (savedIdStr) {
+            const savedId = parseInt(savedIdStr, 10);
+            // Suchen, ob die ID in den geladenen Backend-Daten existiert
+            const found = configs.find(c => c.id === savedId);
+            if (found) {
+              targetConfig = found;
+            }
+          }
+
+          // 2. Das gefundene oder ausgewählte Profil aktivieren
+          this.defaultConfig.set(targetConfig);
+          this.activeConfigId = targetConfig.id;
+          this.switchTab('work');
+
+        } else {
+          // Fallback falls die Datenbank komplett leer ist
+          this.switchTab('work');
+        }
+      },
+      error: (err) => {
+        console.error('Backend nicht erreichbar:', err);
         this.switchTab('work');
       }
-    }
-  });
-}
+    });
+  }
 
   protected switchTab(tab: 'work' | 'break'): void {
-    this.stopLocalCountdown();
-    this.status.set('IDLE');
-    this.activeTab.set(tab);
+  this.stopLocalCountdown();
+  this.status.set('IDLE');
+  this.activeTab.set(tab);
 
-    // Hintergrundfarbe anpassen
-    const body = this.document.body;
-    if (tab === 'work') {
-      body.classList.add('bg-work');
-      body.classList.remove('bg-break');
-    } else {
-      body.classList.add('bg-break');
-      body.classList.remove('bg-work');
-    }
+  // --- NEU: Den aktuellen Tab im Browser für F5-Reloads merken ---
+  localStorage.setItem('activeTimerTab', tab);
 
-    // Daten aus dem Signal holen
-    const config = this.defaultConfig();
-    if (config) {
-      // Dynamisch die geladenen Zeiten aus Ihrem Backend parsen!
-      if (tab === 'work') {
-        this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
-      } else {
-        this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
-      }
-    } else {
-      // Fallback falls die DB leer ist
-      this.remainingSeconds = tab === 'work' ? 1500 : 300;
-    }
-
-    this.updateDisplay();
+  // Hintergrundfarbe anpassen (kann hier als visueller Effekt beim Klicken bleiben)
+  const body = this.document.body;
+  if (tab === 'work') {
+    body.classList.add('bg-work');
+    body.classList.remove('bg-break');
+  } else {
+    body.classList.add('bg-break');
+    body.classList.remove('bg-work');
   }
+
+  // Daten aus dem Signal holen und Zeit berechnen...
+  const config = this.defaultConfig();
+  if (config) {
+    if (tab === 'work') {
+      this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
+    } else {
+      this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
+    }
+  } else {
+    this.remainingSeconds = tab === 'work' ? 1500 : 300;
+  }
+
+  this.updateDisplay();
+}
+
 
   // Der kombinierte Start/Pause Button
   protected toggleTimer(): void {

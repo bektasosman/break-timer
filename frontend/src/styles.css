@@ -8,3 +8,7 @@ body.bg-break {
   background-color: #388e3c !important; /* Pausen-Grün */
   transition: background-color 0.5s ease;
 }
+body.bg-config {
+  background-color: #4a90e2 !important; /* Ein wunderschönes, klares Hellblau */
+  transition: background-color 0.5s ease;
+}

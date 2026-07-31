@@ -2,38 +2,37 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh;
+  min-height: 90vh;
   font-family: sans-serif;
 }
 
+/* Die Config-Box im selben Premium-Glas-Look wie der Timer */
 .config-card {
-  background-color: #ffffff;
-  border: 2px solid #333333;
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.22) !important; /* Heller Milchglas-Schimmer */
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 16px;
   padding: 30px;
   width: 100%;
-  max-width: 450px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  color: #333333;
-}
-
-.config-header {
-  margin-bottom: 25px;
-  text-align: center;
+  max-width: 460px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  color: #ffffff; /* Schriften auf dem Glas sind jetzt weiß */
 }
 
 .config-header h2 {
   margin: 0 0 8px 0;
   font-size: 1.6rem;
+  color: #ffffff;
 }
 
 .config-header p {
   margin: 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.75); /* Leicht transparentes Weiß für den Untertext */
   font-size: 0.9rem;
 }
 
-/* Formular-Styling */
+/* Formular-Eingabefelder */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -53,31 +52,35 @@
 label {
   font-size: 0.9rem;
   font-weight: bold;
-  color: #444;
+  color: #ffffff;
 }
 
 input {
   padding: 12px;
-  border: 2px solid #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  background-color: rgba(255, 255, 255, 0.9); /* Eingabefelder leicht weiß für perfekte Lesbarkeit */
+  color: #333333;
+  transition: all 0.2s;
 }
 
 input:focus {
   outline: none;
-  border-color: #333; /* Dunkler Fokus-Rahmen */
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
-/* Buttons */
+/* Buttons unten */
 .config-actions {
   display: flex;
   gap: 12px;
-  margin-top: 30px;
+  margin-top: 25px;
 }
 
 .config-actions button {
   padding: 14px 20px;
+  border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: bold;
@@ -87,41 +90,41 @@ input:focus {
 }
 
 .btn-cancel {
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
-  color: #333;
+  background-color: transparent;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .btn-cancel:hover {
-  background-color: #e8e8e8;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-save {
-  background-color: #333;
-  border: 1px solid #333;
-  color: white;
-  box-shadow: 0 4px 0px #111;
+  background-color: #ffffff;
+  color: #4a90e2 !important; /* Button-Schrift passend im Config-Blau */
+  box-shadow: 0 4px 0px rgba(0, 0, 0, 0.1);
 }
 
 .btn-save:active {
   transform: translateY(4px);
   box-shadow: none;
 }
-/* Zusätzliches Styling für die Profil-Liste */
+
+/* Profil-Liste unten */
 .config-list-section {
-  margin-top: 35px;
-  border-top: 1px solid #eee;
+  margin-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   padding-top: 20px;
 }
 
 .config-list-section h3 {
   margin: 0 0 15px 0;
   font-size: 1.2rem;
-  color: #333;
+  color: #ffffff;
 }
 
 .empty-hint {
-  color: #888;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
   text-align: center;
   font-style: italic;
@@ -131,24 +134,35 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 200px; /* Macht die Liste scrollbar, falls es viele Einträge werden */
+  max-height: 180px;
   overflow-y: auto;
-  padding-right: 5px;
 }
 
+/* Die einzelnen Listeneinträge */
 .config-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 12px 15px;
   transition: background-color 0.2s;
+  color: white;
 }
 
 .config-item:hover {
-  background-color: #f1f1f1;
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.config-item.clickable {
+  cursor: pointer;
+}
+
+/* Markierung für das aktuell im Timer ausgewählte Profil */
+.config-item.active-profile {
+  border: 1px solid #ffffff;
+  background-color: rgba(255, 255, 255, 0.35);
 }
 
 .item-info {
@@ -160,12 +174,21 @@ input:focus {
 .item-name {
   font-weight: bold;
   font-size: 1rem;
-  color: #222;
 }
 
 .item-times {
   font-size: 0.85rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.badge {
+  background-color: #ffffff;
+  color: #4a90e2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-left: 5px;
+  font-weight: bold;
 }
 
 .btn-delete {
@@ -179,5 +202,5 @@ input:focus {
 }
 
 .btn-delete:hover {
-  background-color: #ffebee; /* Leichter Rotschimmer beim Drüberfahren */
+  background-color: rgba(244, 67, 54, 0.3); /* Roter Schimmer beim Löschen-Hover */
 }

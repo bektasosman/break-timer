@@ -1,17 +1,30 @@
-/* Die Karte wird jetzt massiver und kontrastreicher gefärbt */
-.timer-card {
-  background-color: #ffffff; /* Fester weißer Hintergrund, damit man den Text IMMER sieht */
-  border: 2px solid #333333;
-  border-radius: 12px;
-  padding: 25px;
-  max-width: 420px;
-  margin: 80px auto; 
-  font-family: sans-serif;
-  text-align: center;
-  color: #333333 !important; /* Textfarbe ERZWUNGEN auf Dunkelgrau */
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+/* WENN DER BODY ROT IST (WORK) - Deutlich aufgehellter Schimmer */
+:host-context(body.bg-work) .timer-card {
+  background-color: rgba(255, 255, 255, 0.22) !important; /* Viel weißer Anteil für maximale Helligkeit */
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;  /* Etwas hellerer Rand */
 }
 
+/* WENN DER BODY GRÜN IST (BREAK) - Deutlich aufgehellter Schimmer */
+:host-context(body.bg-break) .timer-card {
+  background-color: rgba(255, 255, 255, 0.22) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Die restlichen Basis-Stile der Timer-Card */
+.timer-card {
+  backdrop-filter: blur(15px); /* Noch ein bisschen mehr Weichzeichnung für den Premium-Look */
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 440px;
+  margin: 100px auto; 
+  font-family: sans-serif;
+  text-align: center;
+  color: #ffffff !important; 
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); /* Etwas weicherer Schatten */
+  position: relative;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
 /* Tab-Design */
 .timer-tabs {
   display: flex;
@@ -85,17 +98,21 @@
 }
 .icon-btn-configure {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 20px;
+  right: 20px;
   background: none;
   border: none;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   cursor: pointer;
-  opacity: 0.6;
-  transition: transform 0.3s ease, opacity 0.2s;
+  color: #ffffff !important;
+  opacity: 0.9;
+  /* Ein feiner, dunkler Schatten wirft das Icon optisch nach vorne */
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.4s ease, opacity 0.2s;
+  z-index: 10;
 }
 
 .icon-btn-configure:hover {
   opacity: 1;
-  transform: rotate(45deg); /* Dreht sich elegant beim Drüberfahren */
+  transform: rotate(90deg);
 }

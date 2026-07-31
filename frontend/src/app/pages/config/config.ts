@@ -1,6 +1,7 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core'; // OnDestroy hinzufügen
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DOCUMENT } from '@angular/common'; // DOCUMENT importieren
 import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
 
 @Component({
@@ -10,22 +11,26 @@ import { TimerConfigService, TimerConfigResponse } from '../../services/timer-co
   templateUrl: './config.html',
   styleUrl: './config.css'
 })
-export class ConfigComponent implements OnInit {
+export class ConfigComponent implements OnInit, OnDestroy { // OnDestroy implementieren
   private configService = inject(TimerConfigService);
   private router = inject(Router);
+  private document = inject(DOCUMENT); // Document injecten
 
-  // Signal für die Liste aller Konfigurationen aus der DB
   protected allConfigs = signal<TimerConfigResponse[]>([]);
-
-  // Formular-Datenmodell
-  protected configModel = {
-    name: '',
-    workMinutes: 25,
-    breakMinutes: 5
-  };
+  protected configModel = { name: '', workMinutes: 25, breakMinutes: 5 };
 
   ngOnInit(): void {
+    // 1. Bildschirm sofort beim Laden hellblau färben
+    const body = this.document.body;
+    body.classList.add('bg-config');
+    body.classList.remove('bg-work', 'bg-break');
+
     this.loadAllConfigs();
+  }
+
+  ngOnDestroy(): void {
+    // 2. Beim Verlassen der Seite die blaue Klasse entfernen
+    this.document.body.classList.remove('bg-config');
   }
 
   // Lädt die Liste frisch aus dem Backend
@@ -36,7 +41,6 @@ export class ConfigComponent implements OnInit {
     });
   }
 
-  // Speichert eine neue Konfiguration
   protected saveConfig(): void {
     if (!this.configModel.name.trim() || this.configModel.workMinutes <= 0 || this.configModel.breakMinutes <= 0) {
       alert('Bitte füllen Sie alle Felder korrekt aus.');
@@ -49,14 +53,37 @@ export class ConfigComponent implements OnInit {
       breakDuration: `PT${this.configModel.breakMinutes}M`
     };
 
+    // Ab ans Spring Boot Backend!
     this.configService.create(dtoListe).subscribe({
-      next: () => {
-        this.configModel.name = ''; // Formular zurücksetzen
-        this.loadAllConfigs(); // Liste neu laden, damit das Neue auftaucht
+      next: (savedConfig) => {
+        console.log('Konfiguration erfolgreich gespeichert:', savedConfig);
+
+        // 1. Formular zurücksetzen (damit man sofort das nächste eintippen kann)
+        this.configModel.name = '';
+        this.configModel.workMinutes = 25;
+        this.configModel.breakMinutes = 5;
+
+        // 2. Die Liste unten neu laden, damit das neue Profil sofort erscheint
+        this.loadAllConfigs();
       },
-      error: (err) => alert('Speichern fehlgeschlagen.')
+      error: (err) => {
+        console.error('Fehler beim Speichern:', err);
+        alert('Speichern fehlgeschlagen.');
+      }
     });
   }
+
+  // Diese Hilfsfunktion nutzen wir gleich im HTML, um das aktive Profil hervorzuheben
+  protected isConfigActive(id: number): boolean {
+    const savedIdStr = localStorage.getItem('selectedConfigId');
+    if (savedIdStr) {
+      return parseInt(savedIdStr, 10) === id;
+    }
+    // Falls noch gar nichts im Speicher liegt, ist standardmäßig das erste Profil aktiv
+    const configs = this.allConfigs();
+    return configs.length > 0 && configs[0].id === id;
+  }
+
 
   // Löscht eine Konfiguration über die Tonne
   protected deleteConfig(id: number, event: Event): void {
@@ -69,10 +96,35 @@ export class ConfigComponent implements OnInit {
     }
   }
 
+  // Neue Funktion zum Aktivieren eines Profils
+  protected selectConfig(config: TimerConfigResponse): void {
+    // Wir merken uns die ID im Browser-Speicher
+    localStorage.setItem('selectedConfigId', config.id.toString());
+
+    console.log(`Profil "${config.name}" wurde als aktiv gesetzt.`);
+    // Sofort zurück zum Timer springen
+    this.router.navigate(['/']);
+  }
+
   // Hilfsfunktion: Wandelt "PT25M" im Template lesbar in "25 Min" um
   protected formatDuration(durationStr: string): string {
-    if (!durationStr) return '0';
-    const match = durationStr.match(/PT(\d+)M/);
-    return match ? `${match[1]} Min` : durationStr;
+    if (!durationStr) return '0 Min';
+
+    // Falls es kein ISO-String ist, geben wir es einfach aus
+    if (!durationStr.startsWith('PT')) return `${durationStr} Min`;
+
+    // Filtert Stunden (H), Minuten (M) und Sekunden (S) heraus
+    const matches = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!matches) return durationStr;
+
+    const hours = parseInt(matches[1] || '0', 10);
+    const minutes = parseInt(matches[2] || '0', 10);
+    const seconds = parseInt(matches[3] || '0', 10);
+
+    // Wir rechnen alles in reine Minuten um, damit es übersichtlich bleibt
+    const totalMinutes = (hours * 60) + minutes + (seconds > 0 ? 1 : 0);
+
+    return `${totalMinutes} Min`;
   }
+
 }
