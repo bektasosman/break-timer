@@ -21,7 +21,7 @@ public class TimerConfigService {
     private final TimerConfigRepository timerConfigRepo;
 
 
-    public TimerConfigService(TimerConfigRepository timerConfigRepo, TimerSessionRepository timerSessionRepo, TimerScheduler scheduler) {
+    public TimerConfigService(TimerConfigRepository timerConfigRepo) {
         this.timerConfigRepo = timerConfigRepo;
     }
 
