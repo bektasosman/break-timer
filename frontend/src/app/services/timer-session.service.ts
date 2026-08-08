@@ -14,7 +14,7 @@ export interface TimerSessionResponse {
 })
 export class TimerSessionService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/timer-sessions';
+  private apiUrl = 'https://break-timer-1.onrender.com/timer-session';
 
   startTimer(configId: number): Observable<TimerSessionResponse> {
     return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${configId}/start`, {});
