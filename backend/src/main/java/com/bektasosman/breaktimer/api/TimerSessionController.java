@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-1.onrender.com"})
-@RequestMapping("/timer-sessions")
+@RequestMapping("/session")
 public class TimerSessionController {
 
 

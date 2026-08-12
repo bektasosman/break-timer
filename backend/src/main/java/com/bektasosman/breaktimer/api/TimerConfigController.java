@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-1.onrender.com"})
-@RequestMapping("/timer-configs")
+@RequestMapping("/config")
 public class TimerConfigController {
 
     private final TimerConfigService timerConfigService;
