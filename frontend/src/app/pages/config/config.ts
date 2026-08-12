@@ -85,16 +85,22 @@ export class ConfigComponent implements OnInit, OnDestroy { // OnDestroy impleme
   }
 
 
-  // Löscht eine Konfiguration über die Tonne
   protected deleteConfig(id: number, event: Event): void {
-    event.stopPropagation(); // Verhindert, dass der Eintrag gleichzeitig aktiviert wird
-    
-      this.configService.delete(id).subscribe({
-        next: () => this.loadAllConfigs(), // Liste nach dem Löschen aktualisieren
-        error: (err) => alert('Löschen fehlgeschlagen.')
-      });
-    
-  }
+  event.stopPropagation(); // Verhindert, dass der Eintrag gleichzeitig aktiviert wird
+  
+  this.configService.delete(id).subscribe({
+    next: () => {
+      // FIX: Wenn der gelöschte Timer ausgewählt war, wirf ihn aus dem Speicher!
+      const savedIdStr = localStorage.getItem('selectedConfigId');
+      if (savedIdStr && parseInt(savedIdStr, 10) === id) {
+        localStorage.removeItem('selectedConfigId');
+      }
+      
+      this.loadAllConfigs(); // Liste neu laden
+    },
+    error: (err) => alert('Löschen fehlgeschlagen.')
+  });
+}
 
   // Neue Funktion zum Aktivieren eines Profils
   protected selectConfig(config: TimerConfigResponse): void {
