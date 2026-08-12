@@ -88,12 +88,12 @@ export class ConfigComponent implements OnInit, OnDestroy { // OnDestroy impleme
   // Löscht eine Konfiguration über die Tonne
   protected deleteConfig(id: number, event: Event): void {
     event.stopPropagation(); // Verhindert, dass der Eintrag gleichzeitig aktiviert wird
-    if (confirm('Möchten Sie diese Konfiguration wirklich löschen?')) {
+    
       this.configService.delete(id).subscribe({
         next: () => this.loadAllConfigs(), // Liste nach dem Löschen aktualisieren
         error: (err) => alert('Löschen fehlgeschlagen.')
       });
-    }
+    
   }
 
   // Neue Funktion zum Aktivieren eines Profils
