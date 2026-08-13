@@ -1,25 +1,19 @@
 package com.bektasosman.breaktimer.service;
 
-import com.bektasosman.breaktimer.Schedule.TimerScheduler;
 import com.bektasosman.breaktimer.mapper.TimerConfigMapper;
 import com.bektasosman.breaktimer.dto.CreateTimerConfigRequest;
 import com.bektasosman.breaktimer.dto.TimerConfigResponse;
 import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
-import com.bektasosman.breaktimer.repository.TimerSessionRepository;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
 import java.util.List;
 
 @Service
 public class TimerConfigService {
 
     private final TimerConfigRepository timerConfigRepo;
-
 
     public TimerConfigService(TimerConfigRepository timerConfigRepo) {
         this.timerConfigRepo = timerConfigRepo;
@@ -40,8 +34,13 @@ public class TimerConfigService {
         return TimerConfigMapper.toResponse(timerConfig);
     }
 
-    public void delete(Long id){
-         timerConfigRepo.deleteById(id);
+    public void delete(Long id) {
+        TimerConfig config = timerConfigRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Profil nicht gefunden"));
+        if (config.isDefault()) {
+            throw new IllegalStateException("Das Standard-Profil darf nicht gelöscht werden.");
+        }
+        timerConfigRepo.delete(config);
     }
 
     public TimerConfigResponse replace(Long id, CreateTimerConfigRequest dto){
@@ -56,20 +55,5 @@ public class TimerConfigService {
         return TimerConfigMapper.toResponse(saved);
     }
 
-    @Bean
-    public ApplicationRunner dataInitializer(TimerConfigRepository repository) {
-        return args -> {
-            if (repository.count() == 0) {
-                // Wir erstellen das feste Standard-Profil
-                TimerConfig defaultId = new TimerConfig(
-                        "Standard Pomodoro",
-                        Duration.ofMinutes(25),
-                        Duration.ofMinutes(5)
-                );
-                repository.save(defaultId);
-                System.out.println("🚀 Standard-Timer-Profil wurde erfolgreich initialisiert!");
-            }
-        };
-    }
 
 }

@@ -1,5 +1,6 @@
 package com.bektasosman.breaktimer.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -21,6 +22,9 @@ public class TimerConfig {
     String name;
     Duration workDuration;
     Duration breakDuration;
+
+    @Column(nullable = false)
+    private boolean isDefault = false;
 
     TimerConfig(){
 

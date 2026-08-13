@@ -51,14 +51,10 @@
               }}</span>
           </div>
 
-          <!-- NEU: Mülltonne wird NUR angezeigt, wenn es NICHT der Standard-Timer ist -->
-          @if (c.name !== 'Standard Pomodoro') {
-          <button class="btn-delete" (click)="deleteConfig(c.id, $event)" title="Löschen">
-            🗑️
-          </button>
+          @if (c.isDefault) {
+          <button class="btn-delete" (click)="deleteConfig(c.id, $event)">🗑️</button>
           } @else {
-          <!-- Optional: Ein kleines Schloss-Icon, das zeigt, dass dieses Profil geschützt ist -->
-          <span class="lock-icon" title="Standard-Profil kann nicht gelöscht werden">🔒</span>
+          <span class="lock-icon" title="Geschütztes Profil">🔒</span>
           }
         </div>
         }

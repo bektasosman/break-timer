@@ -8,6 +8,7 @@ export interface TimerConfigResponse {
   name: string;
   workDuration: string;  // Kommt als ISO-8601 Duration String vom Backend (z.B. "PT20M")
   breakDuration: string;
+  isDefault: boolean;
 }
 
 @Injectable({

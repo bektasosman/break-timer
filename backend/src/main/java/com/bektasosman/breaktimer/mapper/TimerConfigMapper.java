@@ -22,7 +22,8 @@ public final class TimerConfigMapper {
                 entity.getId(),
                 entity.getName(),
                 entity.getWorkDuration(),
-                entity.getBreakDuration()
+                entity.getBreakDuration(),
+                entity.isDefault()
         );
     }
 }
