@@ -51,7 +51,7 @@
               }}</span>
           </div>
 
-          @if (c.isDefault) {
+          @if (!c.isDefault) {
           <button class="btn-delete" (click)="deleteConfig(c.id, $event)">🗑️</button>
           } @else {
           <span class="lock-icon" title="Geschütztes Profil">🔒</span>
