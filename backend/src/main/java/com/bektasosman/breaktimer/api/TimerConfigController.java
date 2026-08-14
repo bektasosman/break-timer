@@ -3,15 +3,13 @@ package com.bektasosman.breaktimer.api;
 
 import com.bektasosman.breaktimer.dto.CreateTimerConfigRequest;
 import com.bektasosman.breaktimer.dto.TimerConfigResponse;
-import com.bektasosman.breaktimer.entities.TimerConfig;
-import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.service.TimerConfigService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-1.onrender.com"})
+@CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-app.onrender.com"})
 @RequestMapping("/config")
 public class TimerConfigController {
 
