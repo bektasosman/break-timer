@@ -16,7 +16,7 @@ export interface TimerConfigResponse {
 })
 export class TimerConfigService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://break-timer-app.onrender.com/config';
+  private apiUrl = 'https://break-timer.onrender.com/config';
 
   getAll(): Observable<TimerConfigResponse[]> {
     return this.http.get<TimerConfigResponse[]>(this.apiUrl);
