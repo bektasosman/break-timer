@@ -1,14 +1,79 @@
-/* You can add global styles to this file, and also import other style files */
-body.bg-work {
-  background-color: #ba4949 !important; /* Pomodoro-Rot */
+/* Globale Reset & Hintergrund-Übergänge */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #ffffff;
   transition: background-color 0.5s ease;
 }
 
-body.bg-break {
-  background-color: #388e3c !important; /* Pausen-Grün */
-  transition: background-color 0.5s ease;
+body.bg-work { background-color: #ba4949 !important; }
+body.bg-break { background-color: #388e3c !important; }
+body.bg-config { background-color: #4a90e2 !important; }
+
+/* 🟢 Die Navbar-Formattierung */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
 }
-body.bg-config {
-  background-color: #4a90e2 !important; /* Ein wunderschönes, klares Hellblau */
-  transition: background-color 0.5s ease;
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-links a, .auth-status a {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.nav-links a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.auth-status {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.auth-status button {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.auth-status button:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 🟢 Styling & Hover für den Anmelden-Button oben rechts */
+.auth-status a {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  text-decoration: none !important;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.auth-status a:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.35);
+  text-decoration: none !important;
 }

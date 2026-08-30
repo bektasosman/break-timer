@@ -79,6 +79,18 @@ input:focus {
   margin-top: 25px;
 }
 
+/* In config.css */
+.config-container {
+  max-height: calc(100vh - 90px); /* Verhindert, dass die Seite über das Fenster hinausragt */
+  overflow-y: auto;               /* Aktiviert den vertikalen Scrollbalken bei viel Inhalt */
+  padding: 2rem;
+  box-sizing: border-box;
+
+  /* Schönere Scrollleiste (optional) */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+}
+
 .config-actions button {
   padding: 14px 20px;
   border: none;
@@ -155,15 +167,30 @@ input:focus {
   gap: 10px;
   max-height: 280px; /* Etwas mehr Platz nach unten gewähren */
   overflow-y: auto; /* Erlaubt Scrollen im Hintergrund */
-  
+  padding-right: 6px;
   /* --- HIER WIRD DER SCROLLBALKEN US-STYLE KOMPLETT UNSICHTBAR GEMACHT --- */
-  scrollbar-width: none; /* Für Firefox */
+  scrollbar-width: thin; /* Für Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
   -ms-overflow-style: none; /* Für den alten Internet Explorer */
 }
 
-/* Für Chrome, Safari und neuere Edge-Browser ebenfalls unsichtbar machen */
+/* --- Chrome, Safari, Edge (Schicke Glas-Scrollleiste) --- */
 .config-list::-webkit-scrollbar {
-  display: none;
+  width: 6px;                 /* Sehr dezente, schmale Scrollleiste */
+  display: block;             /* Macht die Scrollleiste wieder sichtbar */
+}
+
+.config-list::-webkit-scrollbar-track {
+  background: transparent;    /* Transparenter Hintergrund */
+}
+
+.config-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25); /* Leicht transparentes Weiß */
+  border-radius: 10px;
+}
+
+.config-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);  /* Wird beim Drüberfahren heller */
 }
 
 /* Basis-Design für jedes Profil */

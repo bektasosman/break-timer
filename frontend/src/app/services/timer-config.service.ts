@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; // 👈 1. Environment importieren
 
-// Passend zu Ihrem TimerConfigResponse DTO im Backend
 export interface TimerConfigResponse {
   id: number;
   name: string;
-  workDuration: string;  // Kommt als ISO-8601 Duration String vom Backend (z.B. "PT20M")
+  workDuration: string;
   breakDuration: string;
   isDefault: boolean;
 }
@@ -16,7 +16,9 @@ export interface TimerConfigResponse {
 })
 export class TimerConfigService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://break-timer.onrender.com/config';
+  
+  // 👈 2. Dynamische Basis-URL nutzen
+  private apiUrl = `${environment.apiUrl}/config`; 
 
   getAll(): Observable<TimerConfigResponse[]> {
     return this.http.get<TimerConfigResponse[]>(this.apiUrl);

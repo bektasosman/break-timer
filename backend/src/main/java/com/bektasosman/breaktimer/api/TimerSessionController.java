@@ -1,6 +1,8 @@
 package com.bektasosman.breaktimer.api;
-import com.bektasosman.breaktimer.dto.TimerSessionResponse;
+import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.service.TimerSessionService;
+import lombok.RequiredArgsConstructor;
+import org.aspectj.apache.bcel.classfile.Module;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -8,14 +10,10 @@ import java.util.List;
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-app.onrender.com"})
 @RequestMapping("/session")
+@RequiredArgsConstructor
 public class TimerSessionController {
 
-
     private final TimerSessionService timerSessionService;
-
-    public TimerSessionController(TimerSessionService timerSessionService) {
-        this.timerSessionService = timerSessionService;
-    }
 
     @GetMapping()
     List<TimerSessionResponse> getAll() {

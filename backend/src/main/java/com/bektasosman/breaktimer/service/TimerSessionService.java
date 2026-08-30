@@ -2,7 +2,7 @@ package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.Schedule.TimerScheduler;
 import com.bektasosman.breaktimer.Session.Status;
-import com.bektasosman.breaktimer.dto.TimerSessionResponse;
+import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.mapper.TimerSessionMapper;

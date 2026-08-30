@@ -1,57 +1,31 @@
 package com.bektasosman.breaktimer.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Setter
 @Getter
 @Table(name = "users")
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
 public class User {
 
     private @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    private String name;
-    private int age;
-    private String hobby;
+    @Column(unique = true, nullable = false)
+    private String email;
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return age == user.age && Objects.equals(id, user.id) && Objects.equals(name, user.name) && Objects.equals(hobby, user.hobby);
-    }
+    @JsonIgnore
+    @ToString.Exclude
+    @Column(nullable = false)
+    private String password;
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, age, hobby);
-    }
+    private String role;
 
-    User() {
-    }
-
-    public User(String name, int age, String hobby) {
-        this.name = name;
-        this.age = age;
-        this.hobby = hobby;
-    }
-
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", age=" + age +
-                ", hobby='" + hobby + '\'' +
-                '}';
-    }
 }

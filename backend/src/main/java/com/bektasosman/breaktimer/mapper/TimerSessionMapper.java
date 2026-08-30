@@ -1,6 +1,6 @@
 package com.bektasosman.breaktimer.mapper;
 
-import com.bektasosman.breaktimer.dto.TimerSessionResponse;
+import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.entities.TimerSession;
 
 public final class TimerSessionMapper {

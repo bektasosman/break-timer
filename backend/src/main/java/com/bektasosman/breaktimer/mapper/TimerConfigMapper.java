@@ -1,7 +1,7 @@
 package com.bektasosman.breaktimer.mapper;
 
-import com.bektasosman.breaktimer.dto.CreateTimerConfigRequest;
-import com.bektasosman.breaktimer.dto.TimerConfigResponse;
+import com.bektasosman.breaktimer.dto.config.CreateTimerConfigRequest;
+import com.bektasosman.breaktimer.dto.config.TimerConfigResponse;
 import com.bektasosman.breaktimer.entities.TimerConfig;
 
 public final class TimerConfigMapper {

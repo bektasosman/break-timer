@@ -1,7 +1,7 @@
-package com.bektasosman.breaktimer.dto;
+package com.bektasosman.breaktimer.dto.session;
 
 import com.bektasosman.breaktimer.Session.Status;
-import com.bektasosman.breaktimer.entities.TimerConfig;
+import com.bektasosman.breaktimer.dto.config.TimerConfigResponse;
 
 import java.time.Duration;
 import java.time.Instant;

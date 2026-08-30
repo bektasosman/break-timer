@@ -1,60 +1,51 @@
 package com.bektasosman.breaktimer.api;
 
 import com.bektasosman.breaktimer.entities.User;
-import com.bektasosman.breaktimer.repository.UserRepository;
 import com.bektasosman.breaktimer.exception.UserNotFoundException;
-import org.springframework.hateoas.EntityModel;
+import com.bektasosman.breaktimer.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
-
 @RestController
+@RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserRepository repository;
 
-
-    public UserController(UserRepository repository) {
-        this.repository = repository;
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(repository.findAll());
     }
 
-    @GetMapping("/breaktimer/users")
-    List<User> allUser() {
-        return repository.findAll();
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        return ResponseEntity.ok(user);
     }
 
-    @PostMapping("/breaktimer/users")
-    User newUser(@RequestBody User user) {
-        return repository.save(user);
-    }
-
-    @GetMapping("/breaktimer/users/{id}")
-    EntityModel<User> one(@PathVariable Long id) {
-        User user = repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
-
-        return EntityModel.of(user,
-                linkTo(methodOn(UserController.class).one(id)).withSelfRel(),
-                linkTo(methodOn(UserController.class).allUser()).withRel("users"));
-    }
-
-    @PutMapping("/breaktimer/users/{id}")
-    User replaceUser(@RequestBody User newUser, @PathVariable Long id) {
-        return repository.findById(id)
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@RequestBody User newUser, @PathVariable Long id) {
+        User updatedUser = repository.findById(id)
                 .map(user -> {
-                    user.setName(newUser.getName());
-                    user.setAge(newUser.getAge());
-                    user.setHobby(newUser.getHobby());
+                    user.setEmail(newUser.getEmail());
                     return repository.save(user);
                 })
-                .orElseGet(() -> repository.save(newUser));
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        return ResponseEntity.ok(updatedUser);
     }
 
-    @DeleteMapping("/breaktimer/users/{id}")
-    void deleteUser(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        if (!repository.existsById(id)) {
+            throw new UserNotFoundException(id);
+        }
         repository.deleteById(id);
+        return ResponseEntity.noContent().build(); // HTTP 204 No Content
     }
-
 }

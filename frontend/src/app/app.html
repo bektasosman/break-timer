@@ -1,4 +1,20 @@
+<header class="navbar">
+  <nav class="nav-links">
+    <a routerLink="/timer">Timer</a>
+    <a routerLink="/config">Einstellungen</a>
+  </nav>
+
+  <div class="auth-status">
+  @if (authService.isLoggedIn()) {
+    <span>Eingeloggt als {{ authService.currentUser() }}</span>
+    <button (click)="onLogout()">Abmelden</button>
+  } @else {
+    <span>Status: Gast</span>
+    <a routerLink="/login">Anmelden</a>
+  }
+</div>
+</header>
+
 <main>
-  <!-- Hier drin wird gleich dynamisch Timer oder Config angezeigt -->
   <router-outlet></router-outlet>
 </main>

@@ -1,11 +1,12 @@
-import { Component, OnInit, signal, inject, Inject } from '@angular/core'; // inject & Inject importieren
-import { DOCUMENT } from '@angular/common'; // DOCUMENT importieren
+import { Component, OnInit, signal, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService } from '../../services/timer-session.service';
 import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
 
 @Component({
   selector: 'app-root-timer',
+  standalone: true,
   imports: [RouterLink],
   templateUrl: './timer.html',
   styleUrl: './timer.css',
@@ -13,8 +14,6 @@ import { TimerConfigService, TimerConfigResponse } from '../../services/timer-co
 export class TimerComponent implements OnInit {
   private sessionService = inject(TimerSessionService);
   private configService = inject(TimerConfigService);
-
-  // Zugriff auf das globale Dokument des Browsers erhalten
   private document = inject(DOCUMENT);
 
   protected activeTab = signal<'work' | 'break'>('work');
@@ -28,94 +27,119 @@ export class TimerComponent implements OnInit {
 
   private defaultConfig = signal<TimerConfigResponse | null>(null);
 
-
   ngOnInit(): void {
+    // 1. Welcher Tab war zuletzt aktiv? (Work oder Break)
+    const savedTab = (localStorage.getItem('activeTimerTab') as 'work' | 'break') || 'work';
+    this.activeTab.set(savedTab);
+
+    // 2. Hintergrundfarbe SOFORT anpassen
+    const body = this.document.body;
+    if (savedTab === 'work') {
+      body.classList.add('bg-work');
+      body.classList.remove('bg-break');
+    } else {
+      body.classList.add('bg-break');
+      body.classList.remove('bg-work');
+    }
+
+    // 3. SOFORT Sekunden aus dem Cache (aus config.ts) lesen
+    const cachedWorkSec = localStorage.getItem('cachedWorkSec');
+    const cachedBreakSec = localStorage.getItem('cachedBreakSec');
+
+    if (savedTab === 'work' && cachedWorkSec) {
+      this.remainingSeconds = parseInt(cachedWorkSec, 10);
+    } else if (savedTab === 'break' && cachedBreakSec) {
+      this.remainingSeconds = parseInt(cachedBreakSec, 10);
+    } else {
+      // Fallback nur falls der Speicher komplett leer ist
+      this.remainingSeconds = savedTab === 'work' ? 1500 : 300;
+    }
+
+    // Sofort die exakte Zeit zeichnen
+    this.updateDisplay();
+
+    // 4. Im Hintergrund die aktuellsten Daten vom Backend abfragen
     this.configService.getAll().subscribe({
       next: (configs: TimerConfigResponse[]) => {
         if (configs && configs.length > 0) {
-
-          // 1. Schauen, ob im Speicher eine ID hinterlegt ist
           const savedIdStr = localStorage.getItem('selectedConfigId');
-          let targetConfig = configs[0]; // Standard-Fallback: Erstes Element
+          let targetConfig = configs[0];
 
           if (savedIdStr) {
             const savedId = parseInt(savedIdStr, 10);
-            // Suchen, ob die ID in den geladenen Backend-Daten existiert
             const found = configs.find(c => c.id === savedId);
-            if (found) {
-              targetConfig = found;
-            }
+            if (found) targetConfig = found;
           }
 
-          // 2. Das gefundene oder ausgewählte Profil aktivieren
           this.defaultConfig.set(targetConfig);
           this.activeConfigId = targetConfig.id;
-          this.switchTab('work');
 
-        } else {
-          // Fallback falls die Datenbank komplett leer ist
-          this.switchTab('work');
+          // Falls der Timer IDLE ist, Cache und Sekunden mit den Daten vom Backend abgleichen
+          if (this.status() === 'IDLE') {
+            const workSec = this.parseIsoDurationToSeconds(targetConfig.workDuration);
+            const breakSec = this.parseIsoDurationToSeconds(targetConfig.breakDuration);
+
+            localStorage.setItem('cachedWorkSec', workSec.toString());
+            localStorage.setItem('cachedBreakSec', breakSec.toString());
+
+            this.remainingSeconds = savedTab === 'work' ? workSec : breakSec;
+            this.updateDisplay();
+          }
         }
       },
-      error: (err) => {
-        console.error('Backend nicht erreichbar:', err);
-        this.switchTab('work');
-      }
+      error: (err) => console.error('Backend nicht erreichbar:', err)
     });
   }
 
   protected switchTab(tab: 'work' | 'break'): void {
-  this.stopLocalCountdown();
-  this.status.set('IDLE');
-  this.activeTab.set(tab);
+    this.stopLocalCountdown();
+    this.status.set('IDLE');
+    this.activeTab.set(tab);
 
-  // --- NEU: Den aktuellen Tab im Browser für F5-Reloads merken ---
-  localStorage.setItem('activeTimerTab', tab);
+    localStorage.setItem('activeTimerTab', tab);
 
-  // Hintergrundfarbe anpassen (kann hier als visueller Effekt beim Klicken bleiben)
-  const body = this.document.body;
-  if (tab === 'work') {
-    body.classList.add('bg-work');
-    body.classList.remove('bg-break');
-  } else {
-    body.classList.add('bg-break');
-    body.classList.remove('bg-work');
-  }
-
-  // Daten aus dem Signal holen und Zeit berechnen...
-  const config = this.defaultConfig();
-  if (config) {
+    const body = this.document.body;
     if (tab === 'work') {
-      this.remainingSeconds = this.parseIsoDurationToSeconds(config.workDuration);
+      body.classList.add('bg-work');
+      body.classList.remove('bg-break');
     } else {
-      this.remainingSeconds = this.parseIsoDurationToSeconds(config.breakDuration);
+      body.classList.add('bg-break');
+      body.classList.remove('bg-work');
     }
-  } else {
-    this.remainingSeconds = tab === 'work' ? 1500 : 300;
+
+    // Beim Tab-Wechsel bevorzugt aus dem Cache lesen
+    const cachedSec = tab === 'work' ? localStorage.getItem('cachedWorkSec') : localStorage.getItem('cachedBreakSec');
+    
+    if (cachedSec) {
+      this.remainingSeconds = parseInt(cachedSec, 10);
+    } else {
+      const config = this.defaultConfig();
+      if (config) {
+        this.remainingSeconds = tab === 'work' 
+          ? this.parseIsoDurationToSeconds(config.workDuration) 
+          : this.parseIsoDurationToSeconds(config.breakDuration);
+      } else {
+        this.remainingSeconds = tab === 'work' ? 1500 : 300;
+      }
+    }
+
+    this.updateDisplay();
   }
 
-  this.updateDisplay();
-}
-
-
-  // Der kombinierte Start/Pause Button
   protected toggleTimer(): void {
     if (this.status() === 'RUNNING') {
-      // PAUSIEREN
       this.stopLocalCountdown();
       this.status.set('PAUSED');
       if (this.currentSessionId) {
         this.sessionService.pauseTimer(this.currentSessionId).subscribe();
       }
     } else {
-      // STARTEN / FORTSETZEN
       this.startLocalCountdown();
       this.status.set('RUNNING');
 
       if (this.status() === 'PAUSED' && this.currentSessionId) {
         this.sessionService.continueTimer(this.currentSessionId).subscribe();
       } else if (this.activeConfigId && this.activeTab() === 'work') {
-        // Nur bei 'work' eine echte DB-Session starten
         this.sessionService.startTimer(this.activeConfigId).subscribe({
           next: (res) => this.currentSessionId = res.id
         });
@@ -123,13 +147,11 @@ export class TimerComponent implements OnInit {
     }
   }
 
-  // Skip-Button finisht die aktuelle Session und wechselt den Tab
   protected skipSession(): void {
     if (this.currentSessionId && this.activeTab() === 'work') {
       this.sessionService.finishTimer(this.currentSessionId).subscribe();
     }
 
-    // Automatisch zum anderen Modus wechseln
     if (this.activeTab() === 'work') {
       this.switchTab('break');
     } else {
@@ -137,7 +159,6 @@ export class TimerComponent implements OnInit {
     }
   }
 
-  // --- COUNTDOWN LOGIK ---
   private startLocalCountdown(): void {
     if (this.countdownInterval) return;
     this.countdownInterval = setInterval(() => {
@@ -145,7 +166,7 @@ export class TimerComponent implements OnInit {
         this.remainingSeconds--;
         this.updateDisplay();
       } else {
-        this.skipSession(); // Wenn Zeit abgelaufen ist, automatisch skippen
+        this.skipSession();
       }
     }, 1000);
   }
@@ -158,26 +179,22 @@ export class TimerComponent implements OnInit {
   }
 
   private updateDisplay(): void {
-    // 1. Berechnen, wie viele Minuten und Sekunden übrig sind
     const minutes = Math.floor(this.remainingSeconds / 60);
     const seconds = this.remainingSeconds % 60;
 
-    // 2. Führende Null hinzufügen (aus 5 wird "05")
     const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
     const displaySeconds = seconds < 10 ? `0${seconds}` : seconds;
 
-    // 3. Das Signal mit dem neuen String füttern
     this.displayTime.set(`${displayMinutes}:${displaySeconds}`);
   }
 
   private parseIsoDurationToSeconds(durationStr: string): number {
     if (!durationStr) return 0;
-    if (!durationStr.startsWith('PT')) return parseInt(durationStr, 10) || 0;
+    if (!durationStr.startsWith('PT')) return (parseInt(durationStr, 10) || 0) * 60;
     const matches = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
     if (!matches) return 0;
     return (parseInt(matches[1] || '0', 10) * 3600) +
       (parseInt(matches[2] || '0', 10) * 60) +
       parseInt(matches[3] || '0', 10);
   }
-
 }

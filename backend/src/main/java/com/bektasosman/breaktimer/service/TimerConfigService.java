@@ -1,8 +1,8 @@
 package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.mapper.TimerConfigMapper;
-import com.bektasosman.breaktimer.dto.CreateTimerConfigRequest;
-import com.bektasosman.breaktimer.dto.TimerConfigResponse;
+import com.bektasosman.breaktimer.dto.config.CreateTimerConfigRequest;
+import com.bektasosman.breaktimer.dto.config.TimerConfigResponse;
 import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;

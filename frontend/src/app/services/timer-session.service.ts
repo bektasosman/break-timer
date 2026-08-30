@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; // 👈 Environment importieren
 
 export interface TimerSessionResponse {
   id: number;
@@ -14,7 +15,9 @@ export interface TimerSessionResponse {
 })
 export class TimerSessionService {
   private http = inject(HttpClient);
-  private apiUrl = 'https://break-timer.onrender.com/session';
+  
+  // 👈 Dynamische Basis-URL nutzen
+  private apiUrl = `${environment.apiUrl}/session`;
 
   startTimer(configId: number): Observable<TimerSessionResponse> {
     return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${configId}/start`, {});

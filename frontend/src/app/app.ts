@@ -1,21 +1,29 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { DOCUMENT } from '@angular/common';
+import { AuthService } from './services/auth.service'; // Pfad prüfen
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  template: '<router-outlet></router-outlet>'
+  standalone: true,
+  imports: [RouterOutlet, RouterLink],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
 })
 export class App implements OnInit {
+  public authService = inject(AuthService); // 👈 Macht AuthService im HTML nutzbar
+  private router = inject(Router);
   private document = inject(DOCUMENT);
 
+onLogout(): void {
+    this.authService.logout(); // Löscht das Token / hebt die Session auf
+    this.router.navigate(['/login']);
+  }
+
   ngOnInit(): void {
-    // Beim App-Start (und jedem F5-Reload) prüfen, welcher Tab aktiv war
     const savedTab = localStorage.getItem('activeTimerTab') || 'work';
     const body = this.document.body;
 
-    // Den Bildschirm sofort beim allerersten Laden richtig einfärben
     if (savedTab === 'break') {
       body.classList.add('bg-break');
       body.classList.remove('bg-work');

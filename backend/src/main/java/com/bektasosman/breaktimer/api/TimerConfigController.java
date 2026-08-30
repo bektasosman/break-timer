@@ -1,9 +1,10 @@
 package com.bektasosman.breaktimer.api;
 
 
-import com.bektasosman.breaktimer.dto.CreateTimerConfigRequest;
-import com.bektasosman.breaktimer.dto.TimerConfigResponse;
+import com.bektasosman.breaktimer.dto.config.CreateTimerConfigRequest;
+import com.bektasosman.breaktimer.dto.config.TimerConfigResponse;
 import com.bektasosman.breaktimer.service.TimerConfigService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,13 +12,10 @@ import java.util.List;
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-app.onrender.com"})
 @RequestMapping("/config")
+@RequiredArgsConstructor
 public class TimerConfigController {
 
     private final TimerConfigService timerConfigService;
-
-    public TimerConfigController(TimerConfigService timerConfigService) {
-        this.timerConfigService = timerConfigService;
-    }
 
     @PostMapping
     TimerConfigResponse create(@RequestBody CreateTimerConfigRequest dto) {

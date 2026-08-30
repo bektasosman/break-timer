@@ -1,4 +1,4 @@
-package com.bektasosman.breaktimer.dto;
+package com.bektasosman.breaktimer.dto.config;
 
 import java.time.Duration;
 
