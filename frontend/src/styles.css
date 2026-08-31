@@ -10,6 +10,9 @@ html, body {
 body.bg-work { background-color: #ba4949 !important; }
 body.bg-break { background-color: #388e3c !important; }
 body.bg-config { background-color: #4a90e2 !important; }
+body.bg-login { background-color: #ba4949 !important; } 
+body.bg-register { background-color: #ba4949 !important; } 
+
 
 /* 🟢 Die Navbar-Formattierung */
 .navbar {

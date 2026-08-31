@@ -22,7 +22,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const body = this.document.body;
     body.classList.add('bg-config');
-    body.classList.remove('bg-work', 'bg-break');
+    body.classList.remove('bg-login', 'bg-work', 'bg-break', 'bg-register');
 
     // 🟢 1. SOFORT die alte Liste aus dem Cache anzeigen (0 ms Wartezeit)
     const cachedList = localStorage.getItem('cachedConfigs');
@@ -31,6 +31,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.allConfigs.set(JSON.parse(cachedList));
       } catch (e) {
         console.error('Fehler beim Lesen des Caches:', e);
+        this.clearLocalCache();
       }
     }
 
@@ -45,11 +46,11 @@ export class ConfigComponent implements OnInit, OnDestroy {
   private loadAllConfigs(): void {
     this.configService.getAll().subscribe({
       next: (data) => {
-        //  Liste aktualisieren & für das nächste Mal im Cache ablegen
+        console.log('vom Backend empfangene Konfigurationen:', data);
+        if (data && data.length > 0) {
+          //  Liste aktualisieren & für das nächste Mal im Cache ablegen
         this.allConfigs.set(data);
         localStorage.setItem('cachedConfigs', JSON.stringify(data));
-
-        if (data && data.length > 0) {
           const savedIdStr = localStorage.getItem('selectedConfigId');
           let activeConfig = data[0];
 
@@ -61,15 +62,18 @@ export class ConfigComponent implements OnInit, OnDestroy {
           this.updateCache(activeConfig);
         }
         else{
-          // 🟢 Wenn die Liste leer ist, den aktiven Timer-Cache löschen:
-        localStorage.removeItem('selectedConfigId');
-        localStorage.removeItem('cachedWorkSec');
-        localStorage.removeItem('cachedBreakSec');
-        localStorage.removeItem('cachedConfigs');
+          this.clearLocalCache();
         }
       },
       error: (err) => console.error('Fehler beim Laden der Listen:', err)
     });
+  }
+private clearLocalCache(): void {
+    this.allConfigs.set([]);
+    localStorage.removeItem('cachedConfigs');
+    localStorage.removeItem('selectedConfigId');
+    localStorage.removeItem('cachedWorkSec');
+    localStorage.removeItem('cachedBreakSec');
   }
 
   protected saveConfig(): void {

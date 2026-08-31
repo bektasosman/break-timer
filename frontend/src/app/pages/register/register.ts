@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-register',
@@ -13,10 +14,18 @@ import { AuthService } from '../../services/auth.service';
 export class RegisterComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private document = inject(DOCUMENT);
 
-  email = ''; 
+  email = '';
   password = '';
   confirmPassword = '';
+
+  ngOnInit(): void {
+    const body = this.document.body;
+    body.classList.remove('bg-config', 'bg-work', 'bg-break', 'bg-login');
+    body.classList.add('bg-register');
+  }
+
 
   onRegister(): void {
     if (this.password !== this.confirmPassword) {
