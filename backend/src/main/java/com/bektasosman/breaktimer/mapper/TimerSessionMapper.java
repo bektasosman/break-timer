@@ -10,7 +10,7 @@ public final class TimerSessionMapper {
 
     public static TimerSessionResponse toResponse(TimerSession session){
         return new TimerSessionResponse(
-                session.getSessionId(),
+                session.getId(),
                 TimerConfigMapper.toResponse(session.getTimerConfig()),
                 session.getCurrentStartTime(),
                 session.getWorkedDuration(),

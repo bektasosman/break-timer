@@ -1,11 +1,7 @@
 package com.bektasosman.breaktimer.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -13,48 +9,19 @@ import java.util.Objects;
 @Entity
 @Setter
 @Getter
+@RequiredArgsConstructor
 public class TimerConfig {
 
-    private @Id
-    @GeneratedValue
-    Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     String name;
     Duration workDuration;
     Duration breakDuration;
 
-    @Column(nullable = false)
-    private boolean isDefault = false;
-
-    TimerConfig(){
-
-    }
-
-    public TimerConfig(String name, Duration workDuration, Duration breakDuration) {
-        this.name = name;
-        this.workDuration = workDuration;
-        this.breakDuration = breakDuration;
-    }
-
-    @Override
-    public String toString() {
-        return "TimerConfig{" +
-                "id=" + id +
-                ", workDuration=" + workDuration +
-                ", breakDuration=" + breakDuration +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        TimerConfig that = (TimerConfig) o;
-        return workDuration == that.workDuration && breakDuration == that.breakDuration && Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, workDuration, breakDuration);
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
 

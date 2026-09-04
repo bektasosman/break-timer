@@ -5,6 +5,7 @@ import com.bektasosman.breaktimer.dto.auth.AuthResponse;
 import com.bektasosman.breaktimer.dto.auth.ChangePasswordRequest;
 import com.bektasosman.breaktimer.dto.auth.LoginRequest;
 import com.bektasosman.breaktimer.dto.auth.RegisterRequest;
+import com.bektasosman.breaktimer.dto.user.UserResponse;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.security.Principal;
 
 @Service
@@ -21,37 +22,26 @@ import java.security.Principal;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final CustomUserDetailsService userService;
+    private final CustomUserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
+    @Transactional
     public String register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("E-Mail ist bereits vergeben!");
-        }
-
-        User user = User.builder()
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role("USER")
-                .build();
-
-        userRepository.save(user);
-        return "Benutzer erfolgreich registriert!";
+        UserResponse createdUser = userService.createUser(request);
+        return "Benutzer" + createdUser.email() + "erfolgreich registriert!";
     }
 
-
     public AuthResponse login(LoginRequest request) {
-        // Spring Security prüft, ob Username & Klartext-Passwort mit dem Hash in der DB übereinstimmen
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
                         request.password()
                 )
         );
-        // Wenn kein Fehler geworfen wurde, ist der Login gültig -> User aus DB laden
-        UserDetails user = userService.loadUserByUsername(request.email());
+        UserDetails user = userDetailsService.loadUserByUsername(request.email());
         String token = jwtService.generateToken(user);
         return new AuthResponse(token, user.getUsername());
     }

@@ -1,8 +1,12 @@
 package com.bektasosman.breaktimer.api;
 
+import com.bektasosman.breaktimer.dto.user.UpdateUserRequest;
+import com.bektasosman.breaktimer.dto.user.UserResponse;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.exception.UserNotFoundException;
 import com.bektasosman.breaktimer.repository.UserRepository;
+import com.bektasosman.breaktimer.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,37 +19,21 @@ import java.util.List;
 public class UserController {
 
     private final UserRepository repository;
+    private final UserService userService;
 
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(repository.findAll());
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        return ResponseEntity.ok(userService.getCurrentUserProfile());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        User user = repository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
-        return ResponseEntity.ok(user);
+    @PutMapping("/me")
+    public ResponseEntity<UserResponse> updateCurrentUser(@Valid @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.updateCurrentUser(request));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@RequestBody User newUser, @PathVariable Long id) {
-        User updatedUser = repository.findById(id)
-                .map(user -> {
-                    user.setEmail(newUser.getEmail());
-                    return repository.save(user);
-                })
-                .orElseThrow(() -> new UserNotFoundException(id));
-
-        return ResponseEntity.ok(updatedUser);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
-            throw new UserNotFoundException(id);
-        }
-        repository.deleteById(id);
-        return ResponseEntity.noContent().build(); // HTTP 204 No Content
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteCurrentUser() {
+        userService.deleteCurrentUser();
+        return ResponseEntity.noContent().build();
     }
 }

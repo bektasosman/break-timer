@@ -1,11 +1,9 @@
 package com.bektasosman.breaktimer.entities;
 
 import com.bektasosman.breaktimer.Session.Status;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -17,15 +15,20 @@ import java.util.Objects;
 @Setter
 @Getter
 @Entity
+@RequiredArgsConstructor
 public class TimerSession {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private TimerConfig timerConfig;
 
-    private @Id
-    @GeneratedValue
-    Long sessionId;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     Instant currentStartTime;
     Duration workedDuration;
@@ -33,29 +36,4 @@ public class TimerSession {
     Status status;
     Instant expectedFinishTime;
 
-    TimerSession(){
-
-    }
-
-    public TimerSession(Instant currentStartTime, Instant finishedAt, Status status, Duration workedDuration,Instant expectedFinishTime, TimerConfig timerConfig) {
-        this.currentStartTime = currentStartTime;
-        this.finishedAt = finishedAt;
-        this.status = status;
-        this.workedDuration = workedDuration;
-        this.expectedFinishTime = expectedFinishTime;
-        this.timerConfig = timerConfig;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        TimerSession that = (TimerSession) o;
-        return Objects.equals(sessionId, that.sessionId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(sessionId);
-    }
 }
