@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, OnDestroy } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService } from '../../services/timer-session.service';
@@ -11,7 +11,7 @@ import { TimerConfigService, TimerConfigResponse } from '../../services/timer-co
   templateUrl: './timer.html',
   styleUrl: './timer.css',
 })
-export class TimerComponent implements OnInit {
+export class TimerComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
   private configService = inject(TimerConfigService);
   private document = inject(DOCUMENT);
@@ -29,36 +29,23 @@ export class TimerComponent implements OnInit {
 
   ngOnInit(): void {
     // 1. Welcher Tab war zuletzt aktiv? (Work oder Break)
-    const savedTab = (localStorage.getItem('activeTimerTab') as 'work' | 'break') || 'work';
+    const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work'; this.activeTab.set(savedTab);
     this.activeTab.set(savedTab);
+    this.updateTheme(savedTab);
 
-    // 2. Hintergrundfarbe SOFORT anpassen
-    const body = this.document.body;
-    if (savedTab === 'work') {
-      body.classList.add('bg-work');
-      body.classList.remove('bg-break');
-    } else {
-      body.classList.add('bg-break');
-      body.classList.remove('bg-work');
-    }
-
-    // 3. SOFORT Sekunden aus dem Cache (aus config.ts) lesen
-    const cachedWorkSec = localStorage.getItem('cachedWorkSec');
-    const cachedBreakSec = localStorage.getItem('cachedBreakSec');
+    const cachedWorkSec = this.getItem('cachedWorkSec');
+    const cachedBreakSec = this.getItem('cachedBreakSec');
 
     if (savedTab === 'work' && cachedWorkSec) {
       this.remainingSeconds = parseInt(cachedWorkSec, 10);
     } else if (savedTab === 'break' && cachedBreakSec) {
       this.remainingSeconds = parseInt(cachedBreakSec, 10);
     } else {
-      // Fallback nur falls der Speicher komplett leer ist
       this.remainingSeconds = savedTab === 'work' ? 1500 : 300;
     }
 
-    // Sofort die exakte Zeit zeichnen
     this.updateDisplay();
 
-    // 4. Im Hintergrund die aktuellsten Daten vom Backend abfragen
     this.configService.getAll().subscribe({
       next: (configs: TimerConfigResponse[]) => {
         if (configs && configs.length > 0) {
@@ -91,32 +78,27 @@ export class TimerComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.stopLocalCountdown();
+  }
+
   protected switchTab(tab: 'work' | 'break'): void {
     this.stopLocalCountdown();
     this.status.set('IDLE');
     this.activeTab.set(tab);
 
     localStorage.setItem('activeTimerTab', tab);
+    this.updateTheme(tab);
 
-    const body = this.document.body;
-    if (tab === 'work') {
-      body.classList.add('bg-work');
-      body.classList.remove('bg-break');
-    } else {
-      body.classList.add('bg-break');
-      body.classList.remove('bg-work');
-    }
-
-    // Beim Tab-Wechsel bevorzugt aus dem Cache lesen
     const cachedSec = tab === 'work' ? localStorage.getItem('cachedWorkSec') : localStorage.getItem('cachedBreakSec');
-    
+
     if (cachedSec) {
       this.remainingSeconds = parseInt(cachedSec, 10);
     } else {
       const config = this.defaultConfig();
       if (config) {
-        this.remainingSeconds = tab === 'work' 
-          ? this.parseIsoDurationToSeconds(config.workDuration) 
+        this.remainingSeconds = tab === 'work'
+          ? this.parseIsoDurationToSeconds(config.workDuration)
           : this.parseIsoDurationToSeconds(config.breakDuration);
       } else {
         this.remainingSeconds = tab === 'work' ? 1500 : 300;
@@ -134,10 +116,11 @@ export class TimerComponent implements OnInit {
         this.sessionService.pauseTimer(this.currentSessionId).subscribe();
       }
     } else {
+      const previousStatus = this.status();
       this.startLocalCountdown();
       this.status.set('RUNNING');
 
-      if (this.status() === 'PAUSED' && this.currentSessionId) {
+      if (previousStatus === 'PAUSED' && this.currentSessionId) {
         this.sessionService.continueTimer(this.currentSessionId).subscribe();
       } else if (this.activeConfigId && this.activeTab() === 'work') {
         this.sessionService.startTimer(this.activeConfigId).subscribe({
@@ -150,6 +133,7 @@ export class TimerComponent implements OnInit {
   protected skipSession(): void {
     if (this.currentSessionId && this.activeTab() === 'work') {
       this.sessionService.finishTimer(this.currentSessionId).subscribe();
+      this.currentSessionId = null;
     }
 
     if (this.activeTab() === 'work') {
@@ -196,5 +180,29 @@ export class TimerComponent implements OnInit {
     return (parseInt(matches[1] || '0', 10) * 3600) +
       (parseInt(matches[2] || '0', 10) * 60) +
       parseInt(matches[3] || '0', 10);
+  }
+
+  // --- SAFE LOCALSTORAGE WRAPPER ---
+  private getItem(key: string): string | null {
+    return this.isBrowser() ? localStorage.getItem(key) : null;
+  }
+
+  private setItem(key: string, value: string): void {
+    if (this.isBrowser()) localStorage.setItem(key, value);
+  }
+
+  private isBrowser(): boolean {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  }
+
+  private updateTheme(tab: 'work' | 'break'): void {
+    const body = this.document.body;
+    if (tab === 'work') {
+      body.classList.add('bg-work');
+      body.classList.remove('bg-break');
+    } else {
+      body.classList.add('bg-break');
+      body.classList.remove('bg-work');
+    }
   }
 }

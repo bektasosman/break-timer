@@ -10,12 +10,16 @@ import com.bektasosman.breaktimer.exception.TimerNotFoundException;
 import com.bektasosman.breaktimer.mapper.TimerSessionMapper;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
 import com.bektasosman.breaktimer.repository.TimerSessionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class TimerSessionService {
 
     private final TimerSessionRepository timerSessionRepo;
@@ -23,13 +27,7 @@ public class TimerSessionService {
     private final TimerScheduler scheduler;
     private final CurrentUserService currentUserService;
 
-    public TimerSessionService(TimerSessionRepository timerSessionRepo, TimerConfigRepository timerConfigRepo, TimerScheduler scheduler, CurrentUserService currentUserService) {
-        this.timerSessionRepo = timerSessionRepo;
-        this.timerConfigRepo = timerConfigRepo;
-        this.scheduler = scheduler;
-        this.currentUserService = currentUserService;
-    }
-
+    @Transactional
     public TimerSessionResponse startTimer(Long timerConfigId) {
         User currentUser = currentUserService.getCurrentUser();
         TimerConfig timerConfig = timerConfigRepo.findByIdAndUser(timerConfigId, currentUser)
@@ -49,9 +47,12 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(saved);
     }
 
+    @Transactional
     public TimerSessionResponse pauseTimer(Long sessionId) {
         Instant now = Instant.now();
-        TimerSession session = timerSessionRepo.findById(sessionId).orElseThrow();
+        User currentUser = currentUserService.getCurrentUser();
+        TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
+                .orElseThrow(() -> new TimerNotFoundException(sessionId));
         session.setStatus(Status.PAUSED_WORK);
         addWorkedTime(session, now);
         session = timerSessionRepo.save(session);
@@ -59,6 +60,7 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(session);
     }
 
+    @Transactional(readOnly = true)
     public TimerSessionResponse getTimerSession(Long sessionId) {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession found = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
@@ -66,6 +68,7 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(found);
     }
 
+    @Transactional(readOnly = true)
     public List<TimerSessionResponse> getAllTimerSessions() {
         User currentUser = currentUserService.getCurrentUser();
         return timerSessionRepo.findByUser(currentUser).stream()
@@ -73,6 +76,7 @@ public class TimerSessionService {
                 .toList();
     }
 
+    @Transactional
     public TimerSessionResponse continueTimer(Long sessionId) {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
@@ -85,6 +89,7 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(session);
     }
 
+    @Transactional
     public TimerSessionResponse finishTimer(Long sessionId) {
         Instant now = Instant.now();
         // 💡 Kein User-Check hier, da diese Methode auch vom automatischen Background-Scheduler aufgerufen werden kann
@@ -100,6 +105,7 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(saved);
     }
 
+    @Transactional
     public TimerSessionResponse checkIfFinished(Long sessionId) {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)

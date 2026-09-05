@@ -15,6 +15,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
   private configService = inject(TimerConfigService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
+  protected isLoading = signal<boolean>(true); 
 
   protected allConfigs = signal<TimerConfigResponse[]>([]);
   protected configModel = { name: '', workMinutes: 25, breakMinutes: 5 };
@@ -24,19 +25,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
     body.classList.add('bg-config');
     body.classList.remove('bg-login', 'bg-work', 'bg-break', 'bg-register');
 
-    // 🟢 1. SOFORT die alte Liste aus dem Cache anzeigen (0 ms Wartezeit)
-    const cachedList = localStorage.getItem('cachedConfigs');
-    if (cachedList) {
-      try {
-        this.allConfigs.set(JSON.parse(cachedList));
-      } catch (e) {
-        console.error('Fehler beim Lesen des Caches:', e);
-        this.clearLocalCache();
-      }
-    }
-
-    // 🟢 2. Im Hintergrund frische Daten vom Backend laden
     this.loadAllConfigs();
+
   }
 
   ngOnDestroy(): void {
@@ -44,36 +34,26 @@ export class ConfigComponent implements OnInit, OnDestroy {
   }
 
   private loadAllConfigs(): void {
+    this.isLoading.set(true);
     this.configService.getAll().subscribe({
       next: (data) => {
-        console.log('vom Backend empfangene Konfigurationen:', data);
+        this.allConfigs.set(data || []);
+        this.isLoading.set(false); // Auch bei Fehler stoppen
         if (data && data.length > 0) {
-          //  Liste aktualisieren & für das nächste Mal im Cache ablegen
-        this.allConfigs.set(data);
-        localStorage.setItem('cachedConfigs', JSON.stringify(data));
-          const savedIdStr = localStorage.getItem('selectedConfigId');
+          const savedIdStr = this.getItem('selectedConfigId');
           let activeConfig = data[0];
 
           if (savedIdStr) {
             const found = data.find(c => c.id === parseInt(savedIdStr, 10));
             if (found) activeConfig = found;
           }
-
-          this.updateCache(activeConfig);
-        }
-        else{
-          this.clearLocalCache();
+          this.updateActiveConfigCache(activeConfig);
+        } else {
+          this.clearActiveConfigCache();
         }
       },
       error: (err) => console.error('Fehler beim Laden der Listen:', err)
     });
-  }
-private clearLocalCache(): void {
-    this.allConfigs.set([]);
-    localStorage.removeItem('cachedConfigs');
-    localStorage.removeItem('selectedConfigId');
-    localStorage.removeItem('cachedWorkSec');
-    localStorage.removeItem('cachedBreakSec');
   }
 
   protected saveConfig(): void {
@@ -94,7 +74,7 @@ private clearLocalCache(): void {
         this.configModel.workMinutes = 25;
         this.configModel.breakMinutes = 5;
 
-        this.updateCache(savedConfig);
+        this.updateActiveConfigCache(savedConfig);
         this.loadAllConfigs();
       },
       error: (err) => {
@@ -115,16 +95,14 @@ private clearLocalCache(): void {
 
   protected deleteConfig(id: number, event: Event): void {
     event.stopPropagation();
-    
+
     this.configService.delete(id).subscribe({
       next: () => {
-        const savedIdStr = localStorage.getItem('selectedConfigId');
+        const savedIdStr = this.getItem('selectedConfigId');
         if (savedIdStr && parseInt(savedIdStr, 10) === id) {
-          localStorage.removeItem('selectedConfigId');
-          localStorage.removeItem('cachedWorkSec');
-          localStorage.removeItem('cachedBreakSec');
+          this.clearActiveConfigCache();
         }
-        
+
         this.loadAllConfigs();
       },
       error: (err) => alert('Löschen fehlgeschlagen.')
@@ -132,18 +110,25 @@ private clearLocalCache(): void {
   }
 
   protected selectConfig(config: TimerConfigResponse): void {
-    this.updateCache(config);
-    console.log(`Profil "${config.name}" wurde als aktiv gesetzt.`);
+    this.updateActiveConfigCache(config);
     this.router.navigate(['/']);
   }
 
-  private updateCache(config: TimerConfigResponse): void {
+  // --- HILFSMETHODEN FÜR DAS AKTIVE PROFIL ---
+
+  private updateActiveConfigCache(config: TimerConfigResponse): void {
     const workSec = this.parseIsoToSeconds(config.workDuration);
     const breakSec = this.parseIsoToSeconds(config.breakDuration);
 
-    localStorage.setItem('selectedConfigId', config.id.toString());
-    localStorage.setItem('cachedWorkSec', workSec.toString());
-    localStorage.setItem('cachedBreakSec', breakSec.toString());
+    this.setItem('selectedConfigId', config.id.toString());
+    this.setItem('cachedWorkSec', workSec.toString());
+    this.setItem('cachedBreakSec', breakSec.toString());
+  }
+
+  private clearActiveConfigCache(): void {
+    this.removeItem('selectedConfigId');
+    this.removeItem('cachedWorkSec');
+    this.removeItem('cachedBreakSec');
   }
 
   private parseIsoToSeconds(durationStr: string): number {
@@ -170,5 +155,22 @@ private clearLocalCache(): void {
 
     const totalMinutes = (hours * 60) + minutes + (seconds > 0 ? 1 : 0);
     return `${totalMinutes} Min`;
+  }
+
+  // Safewrapper für SSR-Sicherheit
+  private getItem(key: string): string | null {
+    return this.isBrowser() ? localStorage.getItem(key) : null;
+  }
+
+  private setItem(key: string, value: string): void {
+    if (this.isBrowser()) localStorage.setItem(key, value);
+  }
+
+  private removeItem(key: string): void {
+    if (this.isBrowser()) localStorage.removeItem(key);
+  }
+
+  private isBrowser(): boolean {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
   }
 }

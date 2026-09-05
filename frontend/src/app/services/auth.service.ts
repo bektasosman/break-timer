@@ -14,6 +14,12 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmationPassword: string;
+}
+
 export interface AuthResponse {
   token: string;
   email: string;
@@ -48,6 +54,10 @@ export class AuthService {
         this.isLoggedIn.set(true);
       })
     );
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/change-password`, data);
   }
 
   logout(): void {

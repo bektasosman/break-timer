@@ -39,8 +39,10 @@
     <div class="config-list-section">
       <h3>Deine Profile</h3>
 
-      @if (allConfigs().length === 0) {
-      <p class="empty-hint">Noch keine Profile in der Datenbank gespeichert.</p>
+      @if (isLoading()) {
+        <p class="empty-hint">Lade Profile...</p>
+      } @else if (allConfigs().length === 0) {
+      <p class="empty-hint">Noch keine Profile vorhanden.</p>
       } @else {
       <div class="config-list">
         @for (c of allConfigs(); track c.id) {
@@ -51,7 +53,7 @@
               }}</span>
           </div>
 
-          @if (!c.isDefault) {
+          @if (c.name !== 'Standard Pomodoro') {
           <button class="btn-delete" (click)="deleteConfig(c.id, $event)">🗑️</button>
           } @else {
           <span class="lock-icon" title="Geschütztes Profil">🔒</span>
