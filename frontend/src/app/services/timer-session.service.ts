@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment'; // 👈 Environment importieren
 import { AuthService } from './auth.service';
-import { TimerConfigService } from './timer-config.service';
 
 export interface TimerSessionResponse {
   id: number;
@@ -28,8 +27,7 @@ export interface TimerConfigResponse {
 export class TimerSessionService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/session`;
-  private authService = inject(AuthService);
-  private configService = inject(TimerConfigService);
+  private authService = inject(AuthService);  
   private GUEST_SESSIONS_KEY = 'guest_timer_sessions';
 
   getSession(sessionId: number): Observable<TimerSessionResponse> {

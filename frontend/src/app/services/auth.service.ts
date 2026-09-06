@@ -2,7 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router'; // 👈 WICHTIG: Router-Import hinzugefügt
 import { Observable, tap } from 'rxjs';
-import { environment } from '../../environments/environment'; 
+import { environment } from '../../environments/environment';
+
 
 export interface LoginRequest {
   email: string;
@@ -32,7 +33,6 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router); // 👈 Router für die Weiterleitung nach dem Logout
   private apiUrl = `${environment.apiUrl}/auth`;
-
   private TOKEN_KEY = 'auth_token';
   private USER_KEY = 'auth_user';
 
@@ -51,7 +51,7 @@ export class AuthService {
         localStorage.setItem(this.USER_KEY, response.email);
 
         this.currentUser.set(response.email);
-        this.isLoggedIn.set(true);
+        this.isLoggedIn.set(true); // Triggert automatisch den effect() im TimerConfigService
       })
     );
   }

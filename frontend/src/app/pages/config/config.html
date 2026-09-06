@@ -39,9 +39,7 @@
     <div class="config-list-section">
       <h3>Deine Profile</h3>
 
-      @if (isLoading()) {
-        <p class="empty-hint">Lade Profile...</p>
-      } @else if (allConfigs().length === 0) {
+      @if (allConfigs().length === 0) {
       <p class="empty-hint">Noch keine Profile vorhanden.</p>
       } @else {
       <div class="config-list">

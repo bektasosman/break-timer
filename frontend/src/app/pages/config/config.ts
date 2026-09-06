@@ -15,9 +15,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
   private configService = inject(TimerConfigService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
-  protected isLoading = signal<boolean>(true); 
 
-  protected allConfigs = signal<TimerConfigResponse[]>([]);
+  protected allConfigs = this.configService.configs;
   protected configModel = { name: '', workMinutes: 25, breakMinutes: 5 };
 
   ngOnInit(): void {
@@ -25,35 +24,12 @@ export class ConfigComponent implements OnInit, OnDestroy {
     body.classList.add('bg-config');
     body.classList.remove('bg-login', 'bg-work', 'bg-break', 'bg-register');
 
-    this.loadAllConfigs();
+    this.configService.loadAll().subscribe();
 
   }
 
   ngOnDestroy(): void {
     this.document.body.classList.remove('bg-config');
-  }
-
-  private loadAllConfigs(): void {
-    this.isLoading.set(true);
-    this.configService.getAll().subscribe({
-      next: (data) => {
-        this.allConfigs.set(data || []);
-        this.isLoading.set(false); // Auch bei Fehler stoppen
-        if (data && data.length > 0) {
-          const savedIdStr = this.getItem('selectedConfigId');
-          let activeConfig = data[0];
-
-          if (savedIdStr) {
-            const found = data.find(c => c.id === parseInt(savedIdStr, 10));
-            if (found) activeConfig = found;
-          }
-          this.updateActiveConfigCache(activeConfig);
-        } else {
-          this.clearActiveConfigCache();
-        }
-      },
-      error: (err) => console.error('Fehler beim Laden der Listen:', err)
-    });
   }
 
   protected saveConfig(): void {
@@ -73,9 +49,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.configModel.name = '';
         this.configModel.workMinutes = 25;
         this.configModel.breakMinutes = 5;
-
         this.updateActiveConfigCache(savedConfig);
-        this.loadAllConfigs();
       },
       error: (err) => {
         console.error('Fehler beim Speichern:', err);
@@ -102,8 +76,6 @@ export class ConfigComponent implements OnInit, OnDestroy {
         if (savedIdStr && parseInt(savedIdStr, 10) === id) {
           this.clearActiveConfigCache();
         }
-
-        this.loadAllConfigs();
       },
       error: (err) => alert('Löschen fehlgeschlagen.')
     });
