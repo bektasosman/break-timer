@@ -44,7 +44,6 @@ export class StatsComponent implements OnInit, OnDestroy {
   protected isLoading = signal<boolean>(false);
 
   constructor() {
-    // Sobald die Sessions im Service im Speicher / Signal sind, berechnen wir die Diagramme & Metriken sofort
     effect(() => {
       const sessions = this.sessionService.sessions();
       this.processSessions(sessions || []);
@@ -56,12 +55,10 @@ export class StatsComponent implements OnInit, OnDestroy {
     body.classList.add('bg-stats');
     body.classList.remove('bg-work', 'bg-break', 'bg-config', 'bg-login', 'bg-register');
 
-    // Falls noch keine Daten im Speicher sind, kurz Ladezustand anzeigen
     if (this.sessionService.sessions().length === 0) {
       this.isLoading.set(true);
     }
 
-    // Still im Hintergrund aktualisieren
     this.sessionService.loadAll().subscribe({
       next: () => this.isLoading.set(false),
       error: () => this.isLoading.set(false)
@@ -164,10 +161,10 @@ export class StatsComponent implements OnInit, OnDestroy {
     const seconds = totalSeconds % 60;
 
     if (hours > 0) {
-      return `${hours} Std. ${minutes} Min.`;
+      return `${hours} Std. ${minutes}m${seconds > 0 ? ' ' + seconds + 's' : ''}`;
     }
     if (minutes > 0) {
-      return `${minutes} Min.${seconds > 0 ? ` ${seconds}s` : ''}`;
+      return `${minutes} Min.${seconds > 0 ? ' ' + seconds + 's' : ''}`;
     }
     return `${seconds} Sek.`;
   }
@@ -176,26 +173,30 @@ export class StatsComponent implements OnInit, OnDestroy {
     if (!totalSeconds || totalSeconds <= 0) return '0m';
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
     if (hours > 0) {
-      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+      return `${hours}h ${minutes}m`;
     }
-    return `${minutes}m`;
+    if (minutes > 0) {
+      return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+    }
+    return `${seconds}s`;
   }
 
   private parseIsoToSeconds(duration: any): number {
     if (!duration) return 0;
-    if (typeof duration === 'number') return duration;
+    if (typeof duration === 'number') return Math.round(duration);
     if (typeof duration === 'string') {
       if (!duration.startsWith('PT')) {
-        const parsed = parseInt(duration, 10);
-        return isNaN(parsed) ? 0 : parsed;
+        const parsed = parseFloat(duration);
+        return isNaN(parsed) ? 0 : Math.round(parsed);
       }
-      const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+      const match = duration.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?/i);
       if (!match) return 0;
-      const hours = parseInt(match[1] || '0', 10);
-      const minutes = parseInt(match[2] || '0', 10);
-      const seconds = parseInt(match[3] || '0', 10);
-      return hours * 3600 + minutes * 60 + seconds;
+      const hours = parseFloat(match[1] || '0');
+      const minutes = parseFloat(match[2] || '0');
+      const seconds = parseFloat(match[3] || '0');
+      return Math.round(hours * 3600 + minutes * 60 + seconds);
     }
     return 0;
   }

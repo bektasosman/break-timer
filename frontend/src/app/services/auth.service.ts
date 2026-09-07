@@ -1,9 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
+﻿import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router'; // 👈 WICHTIG: Router-Import hinzugefügt
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-
 
 export interface LoginRequest {
   email: string;
@@ -31,12 +30,11 @@ export interface AuthResponse {
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private router = inject(Router); // 👈 Router für die Weiterleitung nach dem Logout
+  private router = inject(Router);
   private apiUrl = `${environment.apiUrl}/auth`;
   private TOKEN_KEY = 'auth_token';
   private USER_KEY = 'auth_user';
 
-  // Signals für reaktiven Status in allen Komponenten
   currentUser = signal<string | null>(this.getStoredUser());
   isLoggedIn = signal<boolean>(!!this.getToken());
 
@@ -47,11 +45,14 @@ export class AuthService {
   login(data: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data).pipe(
       tap(response => {
+        // Vorherige Timer-Zustände und Konfigurations-Caches komplett leeren
+        this.clearSessionAndTimerCache();
+
         localStorage.setItem(this.TOKEN_KEY, response.token);
         localStorage.setItem(this.USER_KEY, response.email);
 
         this.currentUser.set(response.email);
-        this.isLoggedIn.set(true); // Triggert automatisch den effect() im TimerConfigService
+        this.isLoggedIn.set(true);
       })
     );
   }
@@ -61,16 +62,23 @@ export class AuthService {
   }
 
   logout(): void {
-    // 1. Daten aus dem Speicher löschen
+    // Authentifizierung und alle Timer-Zustände leeren
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    this.clearSessionAndTimerCache();
 
-    // 2. Signals zurücksetzen (UI aktualisiert sich automatisch)
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
 
-    // 3. User automatisch zur Login-Seite weiterleiten
     this.router.navigate(['/login']);
+  }
+
+  private clearSessionAndTimerCache(): void {
+    localStorage.removeItem('break_timer_saved_state');
+    localStorage.removeItem('selectedConfigId');
+    localStorage.removeItem('cachedWorkSec');
+    localStorage.removeItem('cachedBreakSec');
+    localStorage.removeItem('activeTimerTab');
   }
 
   getToken(): string | null {

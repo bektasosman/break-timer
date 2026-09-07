@@ -31,8 +31,9 @@ export class TimerConfigService {
 
   constructor() {
     effect(() => {
-      // Reagiere auf Login/Logout Statuswechsel & lade Configs sofort vor
-      this.authService.isLoggedIn(); 
+      // Bei Login/Logout Signal leeren und frische Configs laden
+      this.authService.isLoggedIn();
+      this.configsSignal.set([]);
       this.loadAll().subscribe();
     });
   }
@@ -103,6 +104,7 @@ export class TimerConfigService {
   }
 
   resetState(): void {
+    this.configsSignal.set([]);
     this.loadAll().subscribe();
   }
 

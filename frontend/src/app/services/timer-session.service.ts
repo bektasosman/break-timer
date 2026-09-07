@@ -7,9 +7,9 @@ import { AuthService } from './auth.service';
 export interface TimerSessionResponse {
   id: number;
   timerConfig: TimerConfigResponse;
-  currentStartTime: string | null; // ISO-8601 Timestamp (z.B. "2026-09-05T12:00:00Z")
-  workedDuration: string;          // ISO-8601 Duration (z.B. "PT10M15S")
-  finishedAt: string | null;       // ISO-8601 Timestamp
+  currentStartTime: string | null;
+  workedDuration: string;
+  finishedAt: string | null;
   status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'FINISHED';
 }
 
@@ -33,9 +33,9 @@ export class TimerSessionService {
   public sessions = this.sessionsSignal.asReadonly();
 
   constructor() {
-    // Eagerly prefetch sessions upon service initialization and on auth state change
     effect(() => {
-      this.authService.isLoggedIn(); 
+      this.authService.isLoggedIn();
+      this.sessionsSignal.set([]); // Vorherige Sessions leeren
       this.loadAll().subscribe();
     });
   }
@@ -80,11 +80,9 @@ export class TimerSessionService {
       );
     }
 
-    // 1. Gast-Konfigurationen synchron aus dem LocalStorage holen
     const guestConfigs = this.getGuestConfigsFromStorage();
     const selectedConfig = guestConfigs.find(c => c.id === configId);
 
-    // Fallback auf PT25M, falls die ID nicht gefunden wurde
     const workDurationStr = selectedConfig ? selectedConfig.workDuration : 'PT25M';
     const workSeconds = this.parseIsoToSeconds(workDurationStr);
 
@@ -120,7 +118,6 @@ export class TimerSessionService {
       const now = new Date();
       session.status = 'PAUSED_WORK';
 
-      // Gearbeitete Zeit der aktuellen Phase aufsummieren
       this.addWorkedTime(session, now);
       this.saveGuestSessions(sessions);
       this.sessionsSignal.set(sessions);
@@ -195,14 +192,22 @@ export class TimerSessionService {
     session.workedDuration = this.secondsToIso(totalWorkedSeconds);
   }
 
-  private parseIsoToSeconds(isoDuration: string): number {
+  private parseIsoToSeconds(isoDuration: any): number {
     if (!isoDuration) return 0;
-    const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return 0;
-    const hours = parseInt(match[1] || '0', 10);
-    const minutes = parseInt(match[2] || '0', 10);
-    const seconds = parseInt(match[3] || '0', 10);
-    return hours * 3600 + minutes * 60 + seconds;
+    if (typeof isoDuration === 'number') return Math.round(isoDuration);
+    if (typeof isoDuration === 'string') {
+      if (!isoDuration.startsWith('PT')) {
+        const parsed = parseFloat(isoDuration);
+        return isNaN(parsed) ? 0 : Math.round(parsed);
+      }
+      const match = isoDuration.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?/i);
+      if (!match) return 0;
+      const hours = parseFloat(match[1] || '0');
+      const minutes = parseFloat(match[2] || '0');
+      const seconds = parseFloat(match[3] || '0');
+      return Math.round(hours * 3600 + minutes * 60 + seconds);
+    }
+    return 0;
   }
 
   private secondsToIso(totalSeconds: number): string {
@@ -216,7 +221,6 @@ export class TimerSessionService {
     return res;
   }
 
-  // Hilfsmethode zum synchronen Auslesen der Gast-Configs
   private getGuestConfigsFromStorage(): any[] {
     if (!this.isBrowser()) return [];
     const data = localStorage.getItem('guest_timer_configs');

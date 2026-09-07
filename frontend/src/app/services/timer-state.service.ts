@@ -1,6 +1,7 @@
-﻿import { Injectable, inject, signal } from '@angular/core';
+﻿import { Injectable, inject, signal, effect } from '@angular/core';
 import { TimerConfigResponse } from './timer-config.service';
 import { TimerSessionService } from './timer-session.service';
+import { AuthService } from './auth.service';
 
 export interface SavedTimerState {
   status: 'RUNNING' | 'PAUSED' | 'IDLE';
@@ -16,9 +17,18 @@ export interface SavedTimerState {
 })
 export class TimerStateService {
   private sessionService = inject(TimerSessionService);
+  private authService = inject(AuthService);
   private STORAGE_KEY = 'break_timer_saved_state';
 
   public state = signal<SavedTimerState | null>(this.loadInitialState());
+
+  constructor() {
+    effect(() => {
+      // Wenn sich der Anmeldestatus ändert (Login/Logout), Timer-Zustand zurücksetzen
+      this.authService.isLoggedIn();
+      this.clearTimerState();
+    });
+  }
 
   private loadInitialState(): SavedTimerState | null {
     if (!this.isBrowser()) return null;
@@ -26,7 +36,6 @@ export class TimerStateService {
     if (!raw) return null;
     try {
       const parsed: SavedTimerState = JSON.parse(raw);
-      // Wenn der Timer vor Verlassen auf RUNNING stand, gilt er jetzt als PAUSED
       if (parsed.status === 'RUNNING') {
         parsed.status = 'PAUSED';
       }
@@ -92,12 +101,12 @@ export class TimerStateService {
   private parseIsoToSeconds(durationStr: string): number {
     if (!durationStr) return 0;
     if (!durationStr.startsWith('PT')) return (parseInt(durationStr, 10) || 0) * 60;
-    const matches = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    const matches = durationStr.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?/i);
     if (!matches) return 0;
-    const hours = parseInt(matches[1] || '0', 10);
-    const minutes = parseInt(matches[2] || '0', 10);
-    const seconds = parseInt(matches[3] || '0', 10);
-    return (hours * 3600) + (minutes * 60) + seconds;
+    const hours = parseFloat(matches[1] || '0');
+    const minutes = parseFloat(matches[2] || '0');
+    const seconds = parseFloat(matches[3] || '0');
+    return Math.round(hours * 3600 + minutes * 60 + seconds);
   }
 
   private isBrowser(): boolean {

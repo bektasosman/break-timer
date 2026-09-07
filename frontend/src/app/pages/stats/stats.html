@@ -7,7 +7,7 @@
         <p>Überblick über deine Fokuszeiten und Pomodoro-Sessions</p>
       </div>
       <button type="button" class="btn-cancel" routerLink="/timer" title="Zurück zum Timer">
-        ◀ Zurück
+        ← Zurück
       </button>
     </div>
 
@@ -38,7 +38,7 @@
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⚡</span>
+        <span class="kpi-icon">⏳</span>
         <div class="kpi-info">
           <span class="kpi-label">Gesamtzeit</span>
           <span class="kpi-value">{{ formatSeconds(totalWorkedSeconds()) }}</span>
@@ -87,7 +87,7 @@
       } @else if (sessionHistory().length === 0) {
         <div class="empty-history">
           <p>Noch keine Timer-Sessions vorhanden.</p>
-          <span>Starte deine erste Fokusphase im Timer! 🚀</span>
+          <span>Starte deine erste Fokusphase im Timer! ✨</span>
         </div>
       } @else {
         <div class="history-list">
