@@ -22,15 +22,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 👈 1. CORS-Konfiguration hier explizit aktivieren!
+                // CORS-Konfiguration aktivieren
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/health", "/ping", "/").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -48,13 +48,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-
-    // 👈 2. Zentrale CORS-Regeln für die gesamte App
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Erlaubte Origins (Frontend-URLs)
+        // Erlaubte Origins
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "https://break-timer-app.onrender.com"
@@ -63,13 +61,13 @@ public class SecurityConfig {
         // Erlaubte HTTP-Methoden
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // Erlaubte Header (wichtig für JWT "Authorization" Header!)
+        // Erlaubte Header
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Gilt für ALLE Endpunkte
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
