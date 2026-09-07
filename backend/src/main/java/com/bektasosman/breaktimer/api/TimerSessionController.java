@@ -1,11 +1,11 @@
-package com.bektasosman.breaktimer.api;
+﻿package com.bektasosman.breaktimer.api;
+
 import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.service.TimerSessionService;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.apache.bcel.classfile.Module;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-app.onrender.com"})
@@ -15,36 +15,39 @@ public class TimerSessionController {
 
     private final TimerSessionService timerSessionService;
 
-    @GetMapping()
-    List<TimerSessionResponse> getAll() {
+    @GetMapping
+    public List<TimerSessionResponse> getAll() {
         return timerSessionService.getAllTimerSessions();
     }
 
     @GetMapping("/{id}")
-    TimerSessionResponse one(@PathVariable Long id) {
+    public TimerSessionResponse one(@PathVariable Long id) {
         return timerSessionService.getTimerSession(id);
     }
 
     @PostMapping("/{id}/pause")
-    TimerSessionResponse pause(@PathVariable Long id) {
+    public TimerSessionResponse pause(@PathVariable Long id) {
         return timerSessionService.pauseTimer(id);
     }
 
     @PostMapping("/{id}/continue")
-    TimerSessionResponse continueTimer(@PathVariable Long id) {
+    public TimerSessionResponse continueTimer(@PathVariable Long id) {
         return timerSessionService.continueTimer(id);
     }
 
     @PostMapping("/{id}/finish")
-    TimerSessionResponse finishTimer(@PathVariable Long id){
+    public TimerSessionResponse finishTimer(@PathVariable Long id) {
         return timerSessionService.finishTimer(id);
     }
 
     @PostMapping("/{configId}/start")
-    TimerSessionResponse startTimer(@PathVariable Long configId){
+    public TimerSessionResponse startTimer(@PathVariable Long configId) {
         return timerSessionService.startTimer(configId);
     }
 
-
-
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll() {
+        timerSessionService.deleteAllTimerSessions();
+        return ResponseEntity.noContent().build();
+    }
 }

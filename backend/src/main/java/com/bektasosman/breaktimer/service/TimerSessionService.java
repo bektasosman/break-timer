@@ -1,4 +1,4 @@
-package com.bektasosman.breaktimer.service;
+﻿package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.Schedule.TimerScheduler;
 import com.bektasosman.breaktimer.Session.Status;
@@ -43,7 +43,7 @@ public class TimerSessionService {
         session.setStatus(Status.RUNNING_WORK);
         session.setExpectedFinishTime(expectedFinishTime);
         TimerSession saved = timerSessionRepo.save(session);
-        scheduler.scheduleFinish(  saved.getId(), saved.getExpectedFinishTime(), () -> finishTimer(saved.getId()));
+        scheduler.scheduleFinish(saved.getId(), saved.getExpectedFinishTime(), () -> finishTimer(saved.getId()));
         return TimerSessionMapper.toResponse(saved);
     }
 
@@ -85,14 +85,13 @@ public class TimerSessionService {
         session.setStatus(Status.RUNNING_WORK);
         session.setCurrentStartTime(now);
         session.setExpectedFinishTime(now.plus(session.getTimerConfig().getWorkDuration().minus(session.getWorkedDuration())));
-        scheduler.scheduleFinish(  session.getId(), session.getExpectedFinishTime(), () -> finishTimer(session.getId()));
+        scheduler.scheduleFinish(session.getId(), session.getExpectedFinishTime(), () -> finishTimer(session.getId()));
         return TimerSessionMapper.toResponse(session);
     }
 
     @Transactional
     public TimerSessionResponse finishTimer(Long sessionId) {
         Instant now = Instant.now();
-        // 💡 Kein User-Check hier, da diese Methode auch vom automatischen Background-Scheduler aufgerufen werden kann
         TimerSession session = timerSessionRepo.findById(sessionId)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
         session.setFinishedAt(now);
@@ -116,9 +115,14 @@ public class TimerSessionService {
         return TimerSessionMapper.toResponse(session);
     }
 
+    @Transactional
+    public void deleteAllTimerSessions() {
+        User currentUser = currentUserService.getCurrentUser();
+        timerSessionRepo.deleteByUser(currentUser);
+    }
+
     private static void addWorkedTime(TimerSession session, Instant now) {
         Duration currentWork = Duration.between(session.getCurrentStartTime(), now);
         session.setWorkedDuration(session.getWorkedDuration().plus(currentWork));
     }
-
 }

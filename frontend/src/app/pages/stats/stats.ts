@@ -148,9 +148,20 @@ export class StatsComponent implements OnInit, OnDestroy {
     this.sessionHistory.set(historyItems);
   }
 
-  protected clearGuestStats(): void {
-    if (confirm('Möchtest du die Gast-Statistiken wirklich zurücksetzen?')) {
-      this.sessionService.clearGuestSessions();
+  protected clearStats(): void {
+    if (confirm('Möchtest du die Historie und alle Statistiken wirklich zurücksetzen?')) {
+      this.sessionService.clearAllSessions().subscribe({
+        next: () => {
+          this.processSessions([]);
+        },
+        error: (err) => {
+          console.error('Fehler beim Löschen des Verlaufs:', err);
+          const detailMsg = err?.status === 401
+            ? 'Deine Sitzung ist abgelaufen. Bitte logge dich erneut ein.'
+            : err?.error?.message || err?.message || 'Unbekannter Fehler';
+          alert(`Verlauf konnte nicht gelöscht werden: ${detailMsg}`);
+        }
+      });
     }
   }
 

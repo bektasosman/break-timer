@@ -169,6 +169,17 @@ export class TimerSessionService {
     return of(session!);
   }
 
+  clearAllSessions(): Observable<void> {
+    if (this.authService.isLoggedIn()) {
+      return this.http.delete<void>(this.apiUrl).pipe(
+        tap(() => this.sessionsSignal.set([]))
+      );
+    }
+
+    this.clearGuestSessions();
+    return of(void 0);
+  }
+
   clearGuestSessions(): void {
     if (this.isBrowser()) {
       localStorage.removeItem(this.GUEST_SESSIONS_KEY);

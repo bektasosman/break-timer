@@ -75,8 +75,8 @@
     <div class="history-section">
       <div class="section-title-row">
         <h3>Verlauf</h3>
-        @if (!authService.isLoggedIn() && sessionHistory().length > 0) {
-          <button class="btn-clear" (click)="clearGuestStats()" title="Gast-Historie leeren">
+        @if (sessionHistory().length > 0) {
+          <button class="btn-clear" (click)="clearStats()" title="Verlauf leeren">
             🗑️ Verlauf leeren
           </button>
         }
