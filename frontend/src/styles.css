@@ -1,4 +1,4 @@
-/* Globale Reset & Hintergrund-Übergänge */
+﻿/* Globale Reset & Hintergrund-Übergänge */
 html, body {
   margin: 0;
   padding: 0;
@@ -10,11 +10,11 @@ html, body {
 body.bg-work { background-color: #ba4949 !important; }
 body.bg-break { background-color: #388e3c !important; }
 body.bg-config { background-color: #4a90e2 !important; }
+body.bg-stats { background-color: #5c6bc0 !important; }
 body.bg-login { background-color: #ba4949 !important; } 
 body.bg-register { background-color: #ba4949 !important; } 
 
-
-/* 🟢 Die Navbar-Formattierung */
+/* Die Navbar-Formatierung */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -65,7 +65,7 @@ body.bg-register { background-color: #ba4949 !important; }
   background: rgba(0, 0, 0, 0.5);
 }
 
-/* 🟢 Styling & Hover für den Anmelden-Button oben rechts */
+/* Styling & Hover für den Anmelden-Button oben rechts */
 .auth-status a {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.35);

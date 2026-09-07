@@ -1,18 +1,19 @@
-<header class="navbar">
+﻿<header class="navbar">
   <nav class="nav-links">
     <a routerLink="/timer">Timer</a>
     <a routerLink="/config">Einstellungen</a>
+    <a routerLink="/stats">Statistik</a>
   </nav>
 
   <div class="auth-status">
-  @if (authService.isLoggedIn()) {
-    <span>Eingeloggt als {{ authService.currentUser() }}</span>
-    <button (click)="onLogout()">Abmelden</button>
-  } @else {
-    <span>Status: Gast</span>
-    <a routerLink="/login">Anmelden</a>
-  }
-</div>
+    @if (authService.isLoggedIn()) {
+      <span>Eingeloggt als {{ authService.currentUser() }}</span>
+      <button (click)="onLogout()">Abmelden</button>
+    } @else {
+      <span>Status: Gast</span>
+      <a routerLink="/login">Anmelden</a>
+    }
+  </div>
 </header>
 
 <main>

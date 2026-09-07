@@ -1,7 +1,7 @@
-/* WENN DER BODY ROT IST (WORK) - Deutlich aufgehellter Schimmer */
+﻿/* WENN DER BODY ROT IST (WORK) - Deutlich aufgehellter Schimmer */
 :host-context(body.bg-work) .timer-card {
-  background-color: rgba(255, 255, 255, 0.22) !important; /* Viel weißer Anteil für maximale Helligkeit */
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;  /* Etwas hellerer Rand */
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 
 /* WENN DER BODY GRÜN IST (BREAK) - Deutlich aufgehellter Schimmer */
@@ -12,7 +12,7 @@
 
 /* Die restlichen Basis-Stile der Timer-Card */
 .timer-card {
-  backdrop-filter: blur(15px); /* Noch ein bisschen mehr Weichzeichnung für den Premium-Look */
+  backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-radius: 16px;
   padding: 30px;
@@ -21,10 +21,11 @@
   font-family: sans-serif;
   text-align: center;
   color: #ffffff !important; 
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); /* Etwas weicherer Schatten */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
   position: relative;
   transition: background-color 0.4s ease, border-color 0.4s ease;
 }
+
 /* Tab-Design */
 .timer-tabs {
   display: flex;
@@ -96,23 +97,36 @@
   background-color: #f0f0f0;
   border: 1px solid #333;
 }
-.icon-btn-configure {
+
+/* Icons oben rechts */
+.timer-card-icons {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  cursor: pointer;
-  color: #ffffff !important;
-  opacity: 0.9;
-  /* Ein feiner, dunkler Schatten wirft das Icon optisch nach vorne */
-  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
-  transition: transform 0.4s ease, opacity 0.2s;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   z-index: 10;
 }
 
-.icon-btn-configure:hover {
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #ffffff !important;
+  opacity: 0.85;
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease, opacity 0.2s ease;
+  padding: 4px;
+  line-height: 1;
+}
+
+.icon-btn:hover {
   opacity: 1;
-  transform: rotate(90deg);
+  transform: scale(1.15);
+}
+
+.icon-btn-gear:hover {
+  transform: rotate(90deg) scale(1.15);
 }
