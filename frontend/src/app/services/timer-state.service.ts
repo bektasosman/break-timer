@@ -1,4 +1,4 @@
-﻿import { Injectable, inject, signal, effect } from '@angular/core';
+import { Injectable, inject, signal, effect } from '@angular/core';
 import { TimerConfigResponse } from './timer-config.service';
 import { TimerSessionService } from './timer-session.service';
 import { AuthService } from './auth.service';

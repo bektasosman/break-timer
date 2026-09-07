@@ -1,4 +1,4 @@
-﻿package com.bektasosman.breaktimer.api;
+package com.bektasosman.breaktimer.api;
 
 import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.service.TimerSessionService;

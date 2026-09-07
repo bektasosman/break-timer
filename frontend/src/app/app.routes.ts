@@ -1,4 +1,4 @@
-﻿import { Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { TimerComponent } from './pages/timer/timer';
 import { ConfigComponent } from './pages/config/config';
 import { StatsComponent } from './pages/stats/stats';

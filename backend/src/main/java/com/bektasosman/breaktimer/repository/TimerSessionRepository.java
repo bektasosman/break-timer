@@ -1,4 +1,4 @@
-﻿package com.bektasosman.breaktimer.repository;
+package com.bektasosman.breaktimer.repository;
 
 import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.entities.User;

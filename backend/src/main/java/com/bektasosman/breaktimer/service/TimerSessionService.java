@@ -1,4 +1,4 @@
-﻿package com.bektasosman.breaktimer.service;
+package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.Schedule.TimerScheduler;
 import com.bektasosman.breaktimer.Session.Status;
