@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService, TimerSessionResponse } from '../../services/timer-session.service';
@@ -41,32 +41,35 @@ export class StatsComponent implements OnInit, OnDestroy {
 
   protected chartData = signal<DayChartItem[]>([]);
   protected sessionHistory = signal<SessionHistoryItem[]>([]);
-  protected isLoading = signal<boolean>(true);
+  protected isLoading = signal<boolean>(false);
+
+  constructor() {
+    // Sobald die Sessions im Service im Speicher / Signal sind, berechnen wir die Diagramme & Metriken sofort
+    effect(() => {
+      const sessions = this.sessionService.sessions();
+      this.processSessions(sessions || []);
+    });
+  }
 
   ngOnInit(): void {
     const body = this.document.body;
     body.classList.add('bg-stats');
     body.classList.remove('bg-work', 'bg-break', 'bg-config', 'bg-login', 'bg-register');
 
-    this.loadStats();
+    // Falls noch keine Daten im Speicher sind, kurz Ladezustand anzeigen
+    if (this.sessionService.sessions().length === 0) {
+      this.isLoading.set(true);
+    }
+
+    // Still im Hintergrund aktualisieren
+    this.sessionService.loadAll().subscribe({
+      next: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false)
+    });
   }
 
   ngOnDestroy(): void {
     this.document.body.classList.remove('bg-stats');
-  }
-
-  loadStats(): void {
-    this.isLoading.set(true);
-    this.sessionService.getAllSessions().subscribe({
-      next: (sessions) => {
-        this.processSessions(sessions || []);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Fehler beim Laden der Sessions:', err);
-        this.isLoading.set(false);
-      }
-    });
   }
 
   private processSessions(sessions: TimerSessionResponse[]): void {
@@ -150,8 +153,7 @@ export class StatsComponent implements OnInit, OnDestroy {
 
   protected clearGuestStats(): void {
     if (confirm('Möchtest du die Gast-Statistiken wirklich zurücksetzen?')) {
-      localStorage.removeItem('guest_timer_sessions');
-      this.loadStats();
+      this.sessionService.clearGuestSessions();
     }
   }
 

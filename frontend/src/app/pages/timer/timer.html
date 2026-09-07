@@ -23,11 +23,11 @@
   <!-- Die Buttons unten -->
   <div class="timer-actions">
     <button class="btn btn-toggle" (click)="toggleTimer()">
-      {{ status() === 'RUNNING' ? 'Pause' : 'Start' }}
+      {{ status() === 'RUNNING' ? 'Pause' : (status() === 'PAUSED' ? 'Weiter' : 'Start') }}
     </button>
     
     <button class="btn btn-skip" (click)="skipSession()">
-      ⏭ Skip
+      ⏭️ Skip
     </button>
   </div>
 </div>

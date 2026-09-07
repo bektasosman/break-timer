@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, effect } from '@angular/core';
+﻿import { Injectable, inject, signal, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -31,12 +31,10 @@ export class TimerConfigService {
 
   constructor() {
     effect(() => {
-    // Ruft das Signal ab -> Angular registriert die Abhängigkeit
-    this.authService.isLoggedIn(); 
-    
-    // Lädt die Configs neu (Backend für eingeloggt, LocalStorage für Gast)
-    this.loadAll().subscribe();
-  });
+      // Reagiere auf Login/Logout Statuswechsel & lade Configs sofort vor
+      this.authService.isLoggedIn(); 
+      this.loadAll().subscribe();
+    });
   }
 
   loadAll(): Observable<TimerConfigResponse[]> {
@@ -50,14 +48,17 @@ export class TimerConfigService {
   }
 
   getAll(): Observable<TimerConfigResponse[]> {
-    if (this.authService.isLoggedIn()) {
-      return this.http.get<TimerConfigResponse[]>(this.apiUrl);
+    if (this.configsSignal().length > 0) {
+      return of(this.configsSignal());
     }
-    return of(this.getGuestConfigs());
+    return this.loadAll();
   }
 
-
   getOne(id: number): Observable<TimerConfigResponse> {
+    const cached = this.configsSignal().find(c => c.id === id);
+    if (cached) {
+      return of(cached);
+    }
     return this.http.get<TimerConfigResponse>(`${this.apiUrl}/${id}`);
   }
 
@@ -65,11 +66,11 @@ export class TimerConfigService {
     if (this.authService.isLoggedIn()) {
       return this.http.post<TimerConfigResponse>(this.apiUrl, config).pipe(
         tap(() => this.loadAll().subscribe())
-      )
+      );
     }
     const currentConfigs = this.getGuestConfigs();
     const newConfig: TimerConfigResponse = {
-      id: Date.now(), // Eindeutige temporäre ID für den Gast
+      id: Date.now(),
       name: config.name,
       workDuration: config.workDuration,
       breakDuration: config.breakDuration
@@ -82,7 +83,9 @@ export class TimerConfigService {
   }
 
   update(id: number, config: CreateTimerConfigRequest): Observable<TimerConfigResponse> {
-    return this.http.put<TimerConfigResponse>(`${this.apiUrl}/${id}`, config);
+    return this.http.put<TimerConfigResponse>(`${this.apiUrl}/${id}`, config).pipe(
+      tap(() => this.loadAll().subscribe())
+    );
   }
 
   delete(id: number): Observable<void> {
@@ -99,7 +102,6 @@ export class TimerConfigService {
     return of(void 0);
   }
 
-  // Wird beim Logout aufgerufen, um Datenlecks zu verhindern
   resetState(): void {
     this.loadAll().subscribe();
   }
@@ -108,7 +110,6 @@ export class TimerConfigService {
     if (!this.isBrowser()) return [];
     const data = localStorage.getItem(this.GUEST_CONFIGS_KEY);
     if (!data) {
-      // Standard-Profil anlegen, falls der Gast die Seite zum ersten Mal besucht
       const defaultConfig: TimerConfigResponse[] = [
         { id: 1, name: 'Standard Pomodoro', workDuration: 'PT25M', breakDuration: 'PT5M' }
       ];
@@ -123,6 +124,7 @@ export class TimerConfigService {
       localStorage.setItem(this.GUEST_CONFIGS_KEY, JSON.stringify(configs));
     }
   }
+
   private isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
   }

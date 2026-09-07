@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, inject, OnDestroy } from '@angular/core';
+﻿import { Component, OnInit, signal, inject, OnDestroy } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService } from '../../services/timer-session.service';
 import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
+import { TimerStateService, SavedTimerState } from '../../services/timer-state.service';
 
 @Component({
   selector: 'app-root-timer',
@@ -14,6 +15,7 @@ import { TimerConfigService, TimerConfigResponse } from '../../services/timer-co
 export class TimerComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
   private configService = inject(TimerConfigService);
+  private timerStateService = inject(TimerStateService);
   private document = inject(DOCUMENT);
 
   protected activeTab = signal<'work' | 'break'>('work');
@@ -28,24 +30,37 @@ export class TimerComponent implements OnInit, OnDestroy {
   private defaultConfig = signal<TimerConfigResponse | null>(null);
 
   ngOnInit(): void {
-    // 1. Welcher Tab war zuletzt aktiv? (Work oder Break)
-    const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work'; this.activeTab.set(savedTab);
-    this.activeTab.set(savedTab);
-    this.updateTheme(savedTab);
+    const savedState = this.timerStateService.getTimerState();
 
-    const cachedWorkSec = this.getItem('cachedWorkSec');
-    const cachedBreakSec = this.getItem('cachedBreakSec');
+    if (savedState && (savedState.status === 'PAUSED' || savedState.remainingSeconds > 0)) {
+      this.activeTab.set(savedState.activeTab);
+      this.status.set(savedState.status);
+      this.remainingSeconds = savedState.remainingSeconds;
+      this.currentSessionId = savedState.currentSessionId;
+      this.activeConfigId = savedState.activeConfigId;
 
-    if (savedTab === 'work' && cachedWorkSec) {
-      this.remainingSeconds = parseInt(cachedWorkSec, 10);
-    } else if (savedTab === 'break' && cachedBreakSec) {
-      this.remainingSeconds = parseInt(cachedBreakSec, 10);
+      this.updateDisplay();
+      this.updateTheme(savedState.activeTab);
     } else {
-      this.remainingSeconds = savedTab === 'work' ? 1500 : 300;
+      const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work';
+      this.activeTab.set(savedTab);
+      this.updateTheme(savedTab);
+
+      const cachedWorkSec = this.getItem('cachedWorkSec');
+      const cachedBreakSec = this.getItem('cachedBreakSec');
+
+      if (savedTab === 'work' && cachedWorkSec) {
+        this.remainingSeconds = parseInt(cachedWorkSec, 10);
+      } else if (savedTab === 'break' && cachedBreakSec) {
+        this.remainingSeconds = parseInt(cachedBreakSec, 10);
+      } else {
+        this.remainingSeconds = savedTab === 'work' ? 1500 : 300;
+      }
+
+      this.updateDisplay();
     }
 
-    this.updateDisplay();
-
+    // Configs im Hintergrund synchronisieren
     this.configService.getAll().subscribe({
       next: (configs: TimerConfigResponse[]) => {
         if (configs && configs.length > 0) {
@@ -59,31 +74,50 @@ export class TimerComponent implements OnInit, OnDestroy {
           }
 
           this.defaultConfig.set(targetConfig);
-          this.activeConfigId = targetConfig.id;
+          if (!this.activeConfigId) {
+            this.activeConfigId = targetConfig.id;
+          }
 
-          // Falls der Timer IDLE ist, Cache und Sekunden mit den Daten vom Backend abgleichen
-          if (this.status() === 'IDLE') {
+          // Falls der Timer komplett IDLE ist und noch keine pausierte Zeit existiert:
+          if (this.status() === 'IDLE' && (!savedState || savedState.status === 'IDLE')) {
             const workSec = this.parseIsoDurationToSeconds(targetConfig.workDuration);
             const breakSec = this.parseIsoDurationToSeconds(targetConfig.breakDuration);
 
             localStorage.setItem('cachedWorkSec', workSec.toString());
             localStorage.setItem('cachedBreakSec', breakSec.toString());
 
-            this.remainingSeconds = savedTab === 'work' ? workSec : breakSec;
+            this.remainingSeconds = this.activeTab() === 'work' ? workSec : breakSec;
             this.updateDisplay();
           }
         }
       },
-      error: (err) => console.error('Backend nicht erreichbar:', err)
+      error: (err) => console.error('Configs konnten nicht geladen werden:', err)
     });
   }
 
   ngOnDestroy(): void {
     this.stopLocalCountdown();
+
+    // Wenn der Timer beim Verlassen der Seite lief -> automatisch pausieren!
+    if (this.status() === 'RUNNING') {
+      this.status.set('PAUSED');
+      if (this.currentSessionId) {
+        this.sessionService.pauseTimer(this.currentSessionId).subscribe();
+      }
+    }
+
+    // Zustand dauerhaft speichern
+    this.persistCurrentState();
   }
 
   protected switchTab(tab: 'work' | 'break'): void {
     this.stopLocalCountdown();
+
+    if (this.currentSessionId && this.activeTab() === 'work') {
+      this.sessionService.finishTimer(this.currentSessionId).subscribe();
+      this.currentSessionId = null;
+    }
+
     this.status.set('IDLE');
     this.activeTab.set(tab);
 
@@ -106,6 +140,7 @@ export class TimerComponent implements OnInit, OnDestroy {
     }
 
     this.updateDisplay();
+    this.persistCurrentState();
   }
 
   protected toggleTimer(): void {
@@ -115,6 +150,7 @@ export class TimerComponent implements OnInit, OnDestroy {
       if (this.currentSessionId) {
         this.sessionService.pauseTimer(this.currentSessionId).subscribe();
       }
+      this.persistCurrentState();
     } else {
       const previousStatus = this.status();
       this.startLocalCountdown();
@@ -124,23 +160,26 @@ export class TimerComponent implements OnInit, OnDestroy {
         this.sessionService.continueTimer(this.currentSessionId).subscribe();
       } else if (this.activeConfigId && this.activeTab() === 'work') {
         this.sessionService.startTimer(this.activeConfigId).subscribe({
-          next: (res) => this.currentSessionId = res.id
+          next: (res) => {
+            this.currentSessionId = res.id;
+            this.persistCurrentState();
+          }
         });
       }
+      this.persistCurrentState();
     }
   }
 
   protected skipSession(): void {
+    this.stopLocalCountdown();
+
     if (this.currentSessionId && this.activeTab() === 'work') {
       this.sessionService.finishTimer(this.currentSessionId).subscribe();
       this.currentSessionId = null;
     }
 
-    if (this.activeTab() === 'work') {
-      this.switchTab('break');
-    } else {
-      this.switchTab('work');
-    }
+    const nextTab = this.activeTab() === 'work' ? 'break' : 'work';
+    this.switchTab(nextTab);
   }
 
   private startLocalCountdown(): void {
@@ -172,6 +211,18 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.displayTime.set(`${displayMinutes}:${displaySeconds}`);
   }
 
+  private persistCurrentState(): void {
+    const state: SavedTimerState = {
+      status: this.status(),
+      activeTab: this.activeTab(),
+      remainingSeconds: this.remainingSeconds,
+      currentSessionId: this.currentSessionId,
+      activeConfigId: this.activeConfigId,
+      displayTime: this.displayTime()
+    };
+    this.timerStateService.saveTimerState(state);
+  }
+
   private parseIsoDurationToSeconds(durationStr: string): number {
     if (!durationStr) return 0;
     if (!durationStr.startsWith('PT')) return (parseInt(durationStr, 10) || 0) * 60;
@@ -182,7 +233,6 @@ export class TimerComponent implements OnInit, OnDestroy {
       parseInt(matches[3] || '0', 10);
   }
 
-  // --- SAFE LOCALSTORAGE WRAPPER ---
   private getItem(key: string): string | null {
     return this.isBrowser() ? localStorage.getItem(key) : null;
   }
