@@ -46,7 +46,30 @@ export class TimerSessionService {
       : of(this.getGuestSessions());
 
     return request$.pipe(
-      tap(data => this.sessionsSignal.set(data || []))
+      tap(data => {
+        const serverSessions = data || [];
+        const currentLocal = this.sessionsSignal();
+
+        // Wenn lokal eine Session kürzlich pausiert oder aktualisiert wurde mit mehr Sekunden,
+        // nicht mit einem älteren Backend-Snapshot überschreiben
+        const merged = serverSessions.map(serverSession => {
+          const localMatch = currentLocal.find(l => l.id === serverSession.id);
+          if (localMatch) {
+            const serverSec = this.parseIsoToSeconds(serverSession.workedDuration);
+            const localSec = this.parseIsoToSeconds(localMatch.workedDuration);
+            if (localSec > serverSec) {
+              return {
+                ...serverSession,
+                workedDuration: localMatch.workedDuration,
+                status: localMatch.status
+              };
+            }
+          }
+          return serverSession;
+        });
+
+        this.sessionsSignal.set(merged);
+      })
     );
   }
 
@@ -195,15 +218,15 @@ export class TimerSessionService {
   private addWorkedTime(session: TimerSessionResponse, now: Date): void {
     if (!session.currentStartTime) return;
 
-    const start = new Date(session.currentStartTime);
-    const elapsedSeconds = Math.floor((now.getTime() - start.getTime()) / 1000);
+    const start = new Date(session.currentStartTime).getTime();
+    const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - start) / 1000));
     const previousWorkedSeconds = this.parseIsoToSeconds(session.workedDuration);
 
     const totalWorkedSeconds = previousWorkedSeconds + elapsedSeconds;
     session.workedDuration = this.secondsToIso(totalWorkedSeconds);
   }
 
-  private parseIsoToSeconds(isoDuration: any): number {
+  public parseIsoToSeconds(isoDuration: any): number {
     if (!isoDuration) return 0;
     if (typeof isoDuration === 'number') return Math.round(isoDuration);
     if (typeof isoDuration === 'string') {
@@ -221,7 +244,7 @@ export class TimerSessionService {
     return 0;
   }
 
-  private secondsToIso(totalSeconds: number): string {
+  public secondsToIso(totalSeconds: number): string {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
@@ -241,7 +264,20 @@ export class TimerSessionService {
   private getGuestSessions(): TimerSessionResponse[] {
     if (!this.isBrowser()) return [];
     const data = localStorage.getItem(this.GUEST_SESSIONS_KEY);
-    return data ? JSON.parse(data) : [];
+    const sessions: TimerSessionResponse[] = data ? JSON.parse(data) : [];
+    const now = new Date();
+    return sessions.map(s => {
+      if (s.status === 'RUNNING_WORK' && s.currentStartTime) {
+        const start = new Date(s.currentStartTime).getTime();
+        const elapsed = Math.max(0, Math.floor((now.getTime() - start) / 1000));
+        const prev = this.parseIsoToSeconds(s.workedDuration);
+        return {
+          ...s,
+          workedDuration: this.secondsToIso(prev + elapsed)
+        };
+      }
+      return s;
+    });
   }
 
   private saveGuestSessions(sessions: TimerSessionResponse[]): void {

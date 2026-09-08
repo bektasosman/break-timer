@@ -94,7 +94,17 @@ export class StatsComponent implements OnInit, OnDestroy {
     }
 
     sessions.forEach(s => {
-      const workedSec = this.parseIsoToSeconds(s.workedDuration);
+      let workedSec = this.sessionService.parseIsoToSeconds(s.workedDuration);
+
+      // Falls die Session noch läuft und die Dauer noch nicht in workedDuration eingerechnet ist
+      if (s.status === 'RUNNING_WORK' && s.currentStartTime) {
+        const start = new Date(s.currentStartTime).getTime();
+        const elapsed = Math.max(0, Math.floor((now.getTime() - start) / 1000));
+        if (elapsed > workedSec) {
+          workedSec = elapsed;
+        }
+      }
+
       totalSeconds += workedSec;
 
       const sessionDate = s.finishedAt ? new Date(s.finishedAt) : (s.currentStartTime ? new Date(s.currentStartTime) : null);
@@ -192,24 +202,6 @@ export class StatsComponent implements OnInit, OnDestroy {
       return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
     }
     return `${seconds}s`;
-  }
-
-  private parseIsoToSeconds(duration: any): number {
-    if (!duration) return 0;
-    if (typeof duration === 'number') return Math.round(duration);
-    if (typeof duration === 'string') {
-      if (!duration.startsWith('PT')) {
-        const parsed = parseFloat(duration);
-        return isNaN(parsed) ? 0 : Math.round(parsed);
-      }
-      const match = duration.match(/PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?/i);
-      if (!match) return 0;
-      const hours = parseFloat(match[1] || '0');
-      const minutes = parseFloat(match[2] || '0');
-      const seconds = parseFloat(match[3] || '0');
-      return Math.round(hours * 3600 + minutes * 60 + seconds);
-    }
-    return 0;
   }
 
   private getDateKey(d: Date): string {
