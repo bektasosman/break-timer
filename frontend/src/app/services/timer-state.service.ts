@@ -1,7 +1,6 @@
-import { Injectable, inject, signal, effect } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { TimerConfigResponse } from './timer-config.service';
 import { TimerSessionService } from './timer-session.service';
-import { AuthService } from './auth.service';
 
 export interface SavedTimerState {
   status: 'RUNNING' | 'PAUSED' | 'IDLE';
@@ -17,18 +16,9 @@ export interface SavedTimerState {
 })
 export class TimerStateService {
   private sessionService = inject(TimerSessionService);
-  private authService = inject(AuthService);
   private STORAGE_KEY = 'break_timer_saved_state';
 
   public state = signal<SavedTimerState | null>(this.loadInitialState());
-
-  constructor() {
-    effect(() => {
-      // Wenn sich der Anmeldestatus ändert (Login/Logout), Timer-Zustand zurücksetzen
-      this.authService.isLoggedIn();
-      this.clearTimerState();
-    });
-  }
 
   private loadInitialState(): SavedTimerState | null {
     if (!this.isBrowser()) return null;
@@ -57,6 +47,9 @@ export class TimerStateService {
   }
 
   public getTimerState(): SavedTimerState | null {
+    if (!this.state()) {
+      this.state.set(this.loadInitialState());
+    }
     return this.state();
   }
 
@@ -68,7 +61,7 @@ export class TimerStateService {
   }
 
   public selectNewConfig(config: TimerConfigResponse): void {
-    const currentState = this.state();
+    const currentState = this.getTimerState();
     if (currentState?.currentSessionId && currentState.activeTab === 'work') {
       this.sessionService.finishTimer(currentState.currentSessionId).subscribe();
     }

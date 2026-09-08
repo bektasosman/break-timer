@@ -1,4 +1,4 @@
-﻿<header class="navbar">
+<header class="navbar">
   <div class="navbar-brand">
     <a routerLink="/timer" (click)="closeMobileMenu()" class="brand-link">
       <span class="brand-icon">⏱️</span>
@@ -20,7 +20,7 @@
         <span class="user-icon">👤</span>
         <span class="user-name">{{ authService.currentUser() }}</span>
       </div>
-      <button class="btn-auth btn-logout" (click)="onLogout()">Abmelden</button>
+      <button type="button" class="btn-auth btn-logout" (click)="onLogout()">Abmelden</button>
     } @else {
       <div class="user-pill guest-pill">
         <span class="user-icon">👤</span>
@@ -57,7 +57,7 @@
             <span class="mobile-user-email">{{ authService.currentUser() }}</span>
           </div>
         </div>
-        <button class="mobile-auth-btn mobile-logout-btn" (click)="onLogout()">
+        <button type="button" class="mobile-auth-btn mobile-logout-btn" (click)="onLogout()">
           Abmelden
         </button>
       } @else {
