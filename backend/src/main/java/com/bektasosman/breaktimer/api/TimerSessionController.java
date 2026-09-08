@@ -40,6 +40,11 @@ public class TimerSessionController {
         return timerSessionService.finishTimer(id);
     }
 
+    @PostMapping("/{id}/cancel")
+    public TimerSessionResponse cancelTimer(@PathVariable Long id) {
+        return timerSessionService.cancelTimer(id);
+    }
+
     @PostMapping("/{configId}/start")
     public TimerSessionResponse startTimer(@PathVariable Long configId) {
         return timerSessionService.startTimer(configId);

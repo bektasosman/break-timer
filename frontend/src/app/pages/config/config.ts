@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DOCUMENT } from '@angular/common';
 import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
 import { TimerStateService } from '../../services/timer-state.service';
+import { TimerSessionService } from '../../services/timer-session.service';
 
 @Component({
   selector: 'app-config',
@@ -15,6 +16,7 @@ import { TimerStateService } from '../../services/timer-state.service';
 export class ConfigComponent implements OnInit, OnDestroy {
   private configService = inject(TimerConfigService);
   private timerStateService = inject(TimerStateService);
+  private sessionService = inject(TimerSessionService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
 
@@ -50,6 +52,12 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.configModel.name = '';
         this.configModel.workMinutes = 25;
         this.configModel.breakMinutes = 5;
+
+        // Falls noch keine aktive Config ausgewählt war, die neue direkt aktivieren
+        const savedIdStr = localStorage.getItem('selectedConfigId');
+        if (!savedIdStr) {
+          this.timerStateService.selectNewConfig(savedConfig);
+        }
       },
       error: (err) => {
         console.error('Fehler beim Speichern:', err);
@@ -70,14 +78,25 @@ export class ConfigComponent implements OnInit, OnDestroy {
   protected deleteConfig(id: number, event: Event): void {
     event.stopPropagation();
 
+    const wasActive = this.isConfigActive(id);
+    const currentState = this.timerStateService.getTimerState();
+
+    if (wasActive && currentState?.currentSessionId) {
+      this.sessionService.cancelTimer(currentState.currentSessionId).subscribe();
+    }
+
     this.configService.delete(id).subscribe({
       next: () => {
-        const savedIdStr = localStorage.getItem('selectedConfigId');
-        if (savedIdStr && parseInt(savedIdStr, 10) === id) {
-          localStorage.removeItem('selectedConfigId');
-          localStorage.removeItem('cachedWorkSec');
-          localStorage.removeItem('cachedBreakSec');
-          this.timerStateService.clearTimerState();
+        const remaining = this.allConfigs().filter(c => c.id !== id);
+        if (wasActive) {
+          if (remaining.length > 0) {
+            this.timerStateService.selectNewConfig(remaining[0]);
+          } else {
+            localStorage.removeItem('selectedConfigId');
+            localStorage.removeItem('cachedWorkSec');
+            localStorage.removeItem('cachedBreakSec');
+            this.timerStateService.clearTimerState();
+          }
         }
       },
       error: (err) => alert('Löschen fehlgeschlagen.')
@@ -86,7 +105,7 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
   protected selectConfig(config: TimerConfigResponse): void {
     this.timerStateService.selectNewConfig(config);
-    this.router.navigate(['/']);
+    this.router.navigate(['/timer']);
   }
 
   protected formatDuration(durationStr: string): string {

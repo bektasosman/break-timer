@@ -105,6 +105,22 @@ public class TimerSessionService {
     }
 
     @Transactional
+    public TimerSessionResponse cancelTimer(Long sessionId) {
+        Instant now = Instant.now();
+        User currentUser = currentUserService.getCurrentUser();
+        TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
+                .orElseThrow(() -> new TimerNotFoundException(sessionId));
+        session.setFinishedAt(now);
+        if (session.getStatus() == Status.RUNNING_WORK) {
+            addWorkedTime(session, now);
+        }
+        session.setStatus(Status.CANCELLED);
+        TimerSession saved = timerSessionRepo.save(session);
+        scheduler.cancelFinish(saved.getId());
+        return TimerSessionMapper.toResponse(saved);
+    }
+
+    @Transactional
     public TimerSessionResponse checkIfFinished(Long sessionId) {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)

@@ -14,7 +14,7 @@
     <!-- Schnellübersicht (KPI Cards) -->
     <div class="kpi-grid">
       <div class="kpi-card">
-        <span class="kpi-icon">🎯</span>
+        <span class="kpi-icon">📅</span>
         <div class="kpi-info">
           <span class="kpi-label">Heute</span>
           <span class="kpi-value">{{ formatSeconds(todayWorkedSeconds()) }}</span>
@@ -22,7 +22,7 @@
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">📅</span>
+        <span class="kpi-icon">📈</span>
         <div class="kpi-info">
           <span class="kpi-label">Diese Woche</span>
           <span class="kpi-value">{{ formatSeconds(weekWorkedSeconds()) }}</span>
@@ -30,7 +30,7 @@
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⚡</span>
+        <span class="kpi-icon">🔢</span>
         <div class="kpi-info">
           <span class="kpi-label">Sessions</span>
           <span class="kpi-value">{{ totalSessionsCount() }}</span>
@@ -101,7 +101,7 @@
               </div>
               <div class="history-meta">
                 <span class="history-duration">⏱️ {{ s.durationFormatted }}</span>
-                <span class="status-badge" [class.finished]="s.status === 'Abgeschlossen'">
+                <span class="status-badge" [ngClass]="s.statusClass">
                   {{ s.status }}
                 </span>
               </div>

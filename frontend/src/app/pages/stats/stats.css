@@ -1,126 +1,130 @@
+/* Haupt-Container fr die Statistikseite */
 .stats-container {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100dvh - 70px);
-  width: 100%;
-  padding: 1.5rem 1rem max(2.5rem, env(safe-area-inset-bottom));
+  min-height: calc(100vh - 80px);
+  min-height: calc(100dvh - 80px);
+  padding: 24px 16px 40px;
   box-sizing: border-box;
-  font-family: system-ui, -apple-system, sans-serif;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 .stats-card {
-  background-color: rgba(20, 35, 55, 0.72) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 16px;
-  padding: 24px;
+  background-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 28px 24px;
   width: 100%;
   max-width: 580px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
-  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   box-sizing: border-box;
-  margin-bottom: 20px;
 }
 
+/* Header & Zurck-Button */
 .stats-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 22px;
   flex-wrap: wrap;
 }
 
 .header-titles {
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .stats-header h2 {
-  margin: 0 0 6px 0;
-  font-size: 1.45rem;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #ffffff;
-  line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
 .stats-header p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.75);
+  margin: 4px 0 0;
   font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .btn-back-header {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  min-height: 38px;
+  box-sizing: border-box;
 }
 
-.btn-back-header:hover {
-  background-color: #ffffff !important;
-  color: #142337 !important;
-  transform: translateY(-1px);
+.btn-back-header:hover,
+.btn-back-header:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(-2px);
 }
 
-/* KPI-Karten */
+/* KPI Grid */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .kpi-card {
   background-color: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.kpi-card:hover {
-  background-color: rgba(255, 255, 255, 0.14);
+  gap: 14px;
 }
 
 .kpi-icon {
   font-size: 1.6rem;
-  line-height: 1;
+  background-color: rgba(255, 255, 255, 0.15);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .kpi-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 
 .kpi-label {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .kpi-value {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #ffffff;
   white-space: nowrap;
@@ -128,32 +132,28 @@
   text-overflow: ellipsis;
 }
 
-/* Chart Bereich */
+/* Diagramm Bereich */
 .chart-section {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .section-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: baseline;
 }
 
 .section-title-row h3 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #ffffff;
 }
 
 .chart-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -161,11 +161,14 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .chart-wrapper {
-  min-width: 280px;
-  padding-top: 8px;
+  min-width: 320px;
+  width: 100%;
 }
 
 .chart-bars {
@@ -174,7 +177,11 @@
   align-items: flex-end;
   height: 160px;
   gap: 8px;
-  padding-bottom: 6px;
+  background-color: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 12px 10px;
+  box-sizing: border-box;
 }
 
 .bar-col {
@@ -183,51 +190,44 @@
   flex-direction: column;
   align-items: center;
   height: 100%;
-  justify-content: flex-end;
   gap: 6px;
-  min-width: 32px;
+  min-width: 36px;
 }
 
 .bar-val-label {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
 }
 
 .bar-track {
-  width: 100%;
-  max-width: 32px;
-  height: 100px;
+  flex: 1;
+  width: 14px;
   background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
   overflow: hidden;
 }
 
 .bar-fill {
-  width: 100%;
-  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
-  border-radius: 6px 6px 0 0;
-  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 0;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+  border-radius: 8px;
+  transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 4px;
 }
 
 .bar-col.is-today .bar-fill {
-  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
-}
-
-.bar-col.is-today .bar-val-label {
-  color: #93c5fd;
-  font-weight: 700;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
 }
 
 .bar-label-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
 }
 
 .bar-day {
@@ -350,6 +350,24 @@
   border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
+.status-badge.cancelled {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.status-badge.paused {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.status-badge.running {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
 @media (max-width: 480px) {
   .stats-card {
     padding: 18px 14px;
@@ -361,23 +379,21 @@
   }
 
   .kpi-card {
-    padding: 10px 10px;
-    gap: 8px;
+    padding: 10px 12px;
+    gap: 10px;
   }
 
   .kpi-icon {
+    width: 36px;
+    height: 36px;
     font-size: 1.3rem;
   }
 
   .kpi-value {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
-  .chart-bars {
-    height: 130px;
-  }
-
-  .bar-track {
-    height: 80px;
+  .stats-header h2 {
+    font-size: 1.3rem;
   }
 }

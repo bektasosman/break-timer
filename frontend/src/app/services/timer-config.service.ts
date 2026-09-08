@@ -29,10 +29,17 @@ export class TimerConfigService {
   private configsSignal = signal<TimerConfigResponse[]>([]);
   public configs = this.configsSignal.asReadonly();
 
+  resetState(): void {
+    this.configsSignal.set([]);
+  }
+
   loadAll(): Observable<TimerConfigResponse[]> {
     const request$ = this.authService.isLoggedIn()
       ? this.http.get<TimerConfigResponse[]>(this.apiUrl).pipe(
-          catchError(() => of(this.getGuestConfigs()))
+          catchError((err) => {
+            console.error('Fehler beim Laden der TimerConfigs:', err);
+            return of([]);
+          })
         )
       : of(this.getGuestConfigs());
 
@@ -48,12 +55,18 @@ export class TimerConfigService {
     return this.loadAll();
   }
 
-  getOne(id: number): Observable<TimerConfigResponse> {
+  getOne(id: number): Observable<TimerConfigResponse | null> {
     const cached = this.configsSignal().find(c => c.id === id);
     if (cached) {
       return of(cached);
     }
-    return this.http.get<TimerConfigResponse>(`${this.apiUrl}/${id}`);
+    if (this.authService.isLoggedIn()) {
+      return this.http.get<TimerConfigResponse>(`${this.apiUrl}/${id}`).pipe(
+        catchError(() => of(null))
+      );
+    }
+    const guestConfig = this.getGuestConfigs().find(c => c.id === id);
+    return of(guestConfig || null);
   }
 
   create(config: CreateTimerConfigRequest): Observable<TimerConfigResponse> {
@@ -94,11 +107,6 @@ export class TimerConfigService {
     this.saveGuestConfigs(currentConfigs);
     this.configsSignal.set(currentConfigs);
     return of(void 0);
-  }
-
-  resetState(): void {
-    this.configsSignal.set([]);
-    this.loadAll().subscribe();
   }
 
   private getGuestConfigs(): TimerConfigResponse[] {

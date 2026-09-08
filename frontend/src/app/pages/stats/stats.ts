@@ -17,9 +17,11 @@ export interface SessionHistoryItem {
   id: number;
   configName: string;
   dateStr: string;
+  timestamp: number;
   durationFormatted: string;
   seconds: number;
   status: string;
+  statusClass: 'finished' | 'cancelled' | 'paused' | 'running';
 }
 
 @Component({
@@ -96,7 +98,6 @@ export class StatsComponent implements OnInit, OnDestroy {
     sessions.forEach(s => {
       let workedSec = this.sessionService.parseIsoToSeconds(s.workedDuration);
 
-      // Falls die Session noch läuft und die Dauer noch nicht in workedDuration eingerechnet ist
       if (s.status === 'RUNNING_WORK' && s.currentStartTime) {
         const start = new Date(s.currentStartTime).getTime();
         const elapsed = Math.max(0, Math.floor((now.getTime() - start) / 1000));
@@ -107,33 +108,52 @@ export class StatsComponent implements OnInit, OnDestroy {
 
       totalSeconds += workedSec;
 
-      const sessionDate = s.finishedAt ? new Date(s.finishedAt) : (s.currentStartTime ? new Date(s.currentStartTime) : null);
+      const sessionDate = s.finishedAt ? new Date(s.finishedAt) : (s.currentStartTime ? new Date(s.currentStartTime) : new Date(s.id));
+      const sessionTimestamp = sessionDate.getTime();
 
-      if (sessionDate) {
-        if (sessionDate >= todayStart) {
-          todaySeconds += workedSec;
-        }
-        if (sessionDate >= weekStart) {
-          weekSeconds += workedSec;
-        }
-
-        const key = this.getDateKey(sessionDate);
-        if (last7DaysMap.has(key)) {
-          last7DaysMap.set(key, (last7DaysMap.get(key) || 0) + workedSec);
-        }
-
-        historyItems.push({
-          id: s.id,
-          configName: s.timerConfig?.name || 'Pomodoro Session',
-          dateStr: this.formatDateTime(sessionDate),
-          durationFormatted: this.formatSeconds(workedSec),
-          seconds: workedSec,
-          status: s.status === 'FINISHED' ? 'Abgeschlossen' : (s.status === 'PAUSED_WORK' ? 'Pausiert' : 'Laufend')
-        });
+      if (sessionDate >= todayStart) {
+        todaySeconds += workedSec;
       }
+      if (sessionDate >= weekStart) {
+        weekSeconds += workedSec;
+      }
+
+      const key = this.getDateKey(sessionDate);
+      if (last7DaysMap.has(key)) {
+        last7DaysMap.set(key, (last7DaysMap.get(key) || 0) + workedSec);
+      }
+
+      let statusLabel = 'Pausiert';
+      let statusClass: 'finished' | 'cancelled' | 'paused' | 'running' = 'paused';
+
+      if (s.status === 'FINISHED') {
+        statusLabel = 'Abgeschlossen';
+        statusClass = 'finished';
+      } else if (s.status === 'CANCELLED') {
+        statusLabel = 'Abgebrochen';
+        statusClass = 'cancelled';
+      } else if (s.status === 'RUNNING_WORK') {
+        statusLabel = 'Laufend';
+        statusClass = 'running';
+      } else {
+        statusLabel = 'Pausiert';
+        statusClass = 'paused';
+      }
+
+      historyItems.push({
+        id: s.id,
+        configName: s.timerConfig?.name || 'Pomodoro Session',
+        dateStr: this.formatDateTime(sessionDate),
+        timestamp: sessionTimestamp,
+        durationFormatted: this.formatSeconds(workedSec),
+        seconds: workedSec,
+        status: statusLabel,
+        statusClass
+      });
     });
 
-    historyItems.reverse();
+    // Neueste Sessions immer ganz oben
+    historyItems.sort((a, b) => b.timestamp - a.timestamp);
 
     const maxSec = Math.max(...Array.from(last7DaysMap.values()), 1800);
     const chartItems: DayChartItem[] = dayList.map(item => {
@@ -159,20 +179,15 @@ export class StatsComponent implements OnInit, OnDestroy {
   }
 
   protected clearStats(): void {
-    if (confirm('Möchtest du die Historie und alle Statistiken wirklich zurücksetzen?')) {
-      this.sessionService.clearAllSessions().subscribe({
-        next: () => {
-          this.processSessions([]);
-        },
-        error: (err) => {
-          console.error('Fehler beim Löschen des Verlaufs:', err);
-          const detailMsg = err?.status === 401
-            ? 'Deine Sitzung ist abgelaufen. Bitte logge dich erneut ein.'
-            : err?.error?.message || err?.message || 'Unbekannter Fehler';
-          alert(`Verlauf konnte nicht gelöscht werden: ${detailMsg}`);
-        }
-      });
-    }
+    // Verlauf direkt leeren ohne Nachfrage
+    this.sessionService.clearAllSessions().subscribe({
+      next: () => {
+        this.processSessions([]);
+      },
+      error: (err) => {
+        console.error('Fehler beim Löschen des Verlaufs:', err);
+      }
+    });
   }
 
   protected formatSeconds(totalSeconds: number): string {

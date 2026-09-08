@@ -74,9 +74,8 @@ export class TimerComponent implements OnInit, OnDestroy {
           }
 
           this.defaultConfig.set(targetConfig);
-          if (!this.activeConfigId) {
-            this.activeConfigId = targetConfig.id;
-          }
+          this.activeConfigId = targetConfig.id;
+          this.setItem('selectedConfigId', targetConfig.id.toString());
 
           if (this.status() === 'IDLE' && (!savedState || savedState.status === 'IDLE')) {
             const workSec = this.parseIsoDurationToSeconds(targetConfig.workDuration);
@@ -111,7 +110,7 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.stopLocalCountdown();
 
     if (this.currentSessionId && this.activeTab() === 'work') {
-      this.sessionService.finishTimer(this.currentSessionId).subscribe();
+      this.sessionService.cancelTimer(this.currentSessionId).subscribe();
       this.currentSessionId = null;
     }
 
@@ -171,6 +170,18 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.stopLocalCountdown();
 
     if (this.currentSessionId && this.activeTab() === 'work') {
+      this.sessionService.cancelTimer(this.currentSessionId).subscribe();
+      this.currentSessionId = null;
+    }
+
+    const nextTab = this.activeTab() === 'work' ? 'break' : 'work';
+    this.switchTab(nextTab);
+  }
+
+  private onTimerFinished(): void {
+    this.stopLocalCountdown();
+
+    if (this.currentSessionId && this.activeTab() === 'work') {
       this.sessionService.finishTimer(this.currentSessionId).subscribe();
       this.currentSessionId = null;
     }
@@ -186,7 +197,7 @@ export class TimerComponent implements OnInit, OnDestroy {
         this.remainingSeconds--;
         this.updateDisplay();
       } else {
-        this.skipSession();
+        this.onTimerFinished();
       }
     }, 1000);
   }

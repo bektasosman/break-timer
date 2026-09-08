@@ -75,13 +75,15 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  private clearSessionAndTimerCache(): void {
+  public clearSessionAndTimerCache(): void {
     if (typeof localStorage === 'undefined') return;
     localStorage.removeItem('break_timer_saved_state');
     localStorage.removeItem('selectedConfigId');
     localStorage.removeItem('cachedWorkSec');
     localStorage.removeItem('cachedBreakSec');
     localStorage.removeItem('activeTimerTab');
+    localStorage.removeItem('guest_timer_sessions');
+    localStorage.removeItem('guest_timer_configs');
   }
 
   getToken(): string | null {

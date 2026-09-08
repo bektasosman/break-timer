@@ -6,11 +6,11 @@ import { AuthService } from './auth.service';
 
 export interface TimerSessionResponse {
   id: number;
-  timerConfig: TimerConfigResponse;
+  timerConfig: TimerConfigResponse | null;
   currentStartTime: string | null;
   workedDuration: string;
   finishedAt: string | null;
-  status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'FINISHED';
+  status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'FINISHED' | 'CANCELLED';
 }
 
 export interface TimerConfigResponse {
@@ -32,10 +32,17 @@ export class TimerSessionService {
   private sessionsSignal = signal<TimerSessionResponse[]>([]);
   public sessions = this.sessionsSignal.asReadonly();
 
+  resetState(): void {
+    this.sessionsSignal.set([]);
+  }
+
   loadAll(): Observable<TimerSessionResponse[]> {
     const request$ = this.authService.isLoggedIn()
       ? this.http.get<TimerSessionResponse[]>(this.apiUrl).pipe(
-          catchError(() => of(this.getGuestSessions()))
+          catchError((err) => {
+            console.error('Fehler beim Laden der Sessions:', err);
+            return of([]);
+          })
         )
       : of(this.getGuestSessions());
 
@@ -65,7 +72,7 @@ export class TimerSessionService {
     );
   }
 
-  getSession(sessionId: number): Observable<TimerSessionResponse> {
+  getSession(sessionId: number): Observable<TimerSessionResponse | null> {
     const cached = this.sessionsSignal().find(s => s.id === sessionId);
     if (cached) {
       return of(cached);
@@ -73,15 +80,12 @@ export class TimerSessionService {
 
     if (this.authService.isLoggedIn()) {
       return this.http.get<TimerSessionResponse>(`${this.apiUrl}/${sessionId}`).pipe(
-        catchError(() => {
-          const session = this.getGuestSessions().find(s => s.id === sessionId);
-          return of(session!);
-        })
+        catchError(() => of(null))
       );
     }
 
     const session = this.getGuestSessions().find(s => s.id === sessionId);
-    return of(session!);
+    return of(session || null);
   }
 
   getAllSessions(): Observable<TimerSessionResponse[]> {
@@ -96,9 +100,6 @@ export class TimerSessionService {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${configId}/start`, {}).pipe(
         tap(newSession => {
           this.sessionsSignal.set([...this.sessionsSignal(), newSession]);
-        }),
-        catchError(() => {
-          return of(this.startGuestTimer(configId));
         })
       );
     }
@@ -108,7 +109,7 @@ export class TimerSessionService {
 
   private startGuestTimer(configId: number): TimerSessionResponse {
     const guestConfigs = this.getGuestConfigsFromStorage();
-    const selectedConfig = guestConfigs.find(c => c.id === configId);
+    const selectedConfig = guestConfigs.find(c => c.id === configId) || (guestConfigs.length > 0 ? guestConfigs[0] : null);
 
     const workDurationStr = selectedConfig ? selectedConfig.workDuration : 'PT25M';
     const workSeconds = this.parseIsoToSeconds(workDurationStr);
@@ -135,8 +136,7 @@ export class TimerSessionService {
   pauseTimer(sessionId: number): Observable<TimerSessionResponse> {
     if (this.authService.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/pause`, {}).pipe(
-        tap(updated => this.updateSessionInSignal(updated)),
-        catchError(() => of(this.pauseGuestTimer(sessionId)))
+        tap(updated => this.updateSessionInSignal(updated))
       );
     }
 
@@ -161,8 +161,7 @@ export class TimerSessionService {
   continueTimer(sessionId: number): Observable<TimerSessionResponse> {
     if (this.authService.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/continue`, {}).pipe(
-        tap(updated => this.updateSessionInSignal(updated)),
-        catchError(() => of(this.continueGuestTimer(sessionId)))
+        tap(updated => this.updateSessionInSignal(updated))
       );
     }
 
@@ -187,8 +186,7 @@ export class TimerSessionService {
   finishTimer(sessionId: number): Observable<TimerSessionResponse> {
     if (this.authService.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/finish`, {}).pipe(
-        tap(updated => this.updateSessionInSignal(updated)),
-        catchError(() => of(this.finishGuestTimer(sessionId)))
+        tap(updated => this.updateSessionInSignal(updated))
       );
     }
 
@@ -204,6 +202,35 @@ export class TimerSessionService {
         this.addWorkedTime(session, now);
       }
       session.status = 'FINISHED';
+      session.finishedAt = now.toISOString();
+      this.saveGuestSessions(sessions);
+      this.sessionsSignal.set(sessions);
+      return session;
+    }
+    return session!;
+  }
+
+  cancelTimer(sessionId: number): Observable<TimerSessionResponse> {
+    if (this.authService.isLoggedIn()) {
+      return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/cancel`, {}).pipe(
+        tap(updated => this.updateSessionInSignal(updated)),
+        catchError(() => of(this.cancelGuestTimer(sessionId)))
+      );
+    }
+
+    return of(this.cancelGuestTimer(sessionId));
+  }
+
+  private cancelGuestTimer(sessionId: number): TimerSessionResponse {
+    const sessions = this.getGuestSessions();
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      const now = new Date();
+      if (session.status === 'RUNNING_WORK') {
+        this.addWorkedTime(session, now);
+      }
+      session.status = 'CANCELLED';
+      session.finishedAt = now.toISOString();
       this.saveGuestSessions(sessions);
       this.sessionsSignal.set(sessions);
       return session;
@@ -214,11 +241,7 @@ export class TimerSessionService {
   clearAllSessions(): Observable<void> {
     if (this.authService.isLoggedIn()) {
       return this.http.delete<void>(this.apiUrl).pipe(
-        tap(() => this.sessionsSignal.set([])),
-        catchError(() => {
-          this.clearGuestSessions();
-          return of(void 0);
-        })
+        tap(() => this.sessionsSignal.set([]))
       );
     }
 
