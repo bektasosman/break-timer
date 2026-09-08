@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AuthService } from './auth.service';
 
 export interface TimerSessionResponse {
   id: number;
@@ -26,7 +25,6 @@ export interface TimerConfigResponse {
 export class TimerSessionService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/session`;
-  private authService = inject(AuthService);  
   private GUEST_SESSIONS_KEY = 'guest_timer_sessions';
 
   private sessionsSignal = signal<TimerSessionResponse[]>([]);
@@ -36,8 +34,12 @@ export class TimerSessionService {
     this.sessionsSignal.set([]);
   }
 
+  private isLoggedIn(): boolean {
+    return this.isBrowser() && !!localStorage.getItem('auth_token');
+  }
+
   loadAll(): Observable<TimerSessionResponse[]> {
-    const request$ = this.authService.isLoggedIn()
+    const request$ = this.isLoggedIn()
       ? this.http.get<TimerSessionResponse[]>(this.apiUrl).pipe(
           catchError((err) => {
             console.error('Fehler beim Laden der Sessions:', err);
@@ -48,26 +50,7 @@ export class TimerSessionService {
 
     return request$.pipe(
       tap(data => {
-        const serverSessions = data || [];
-        const currentLocal = this.sessionsSignal();
-
-        const merged = serverSessions.map(serverSession => {
-          const localMatch = currentLocal.find(l => l.id === serverSession.id);
-          if (localMatch) {
-            const serverSec = this.parseIsoToSeconds(serverSession.workedDuration);
-            const localSec = this.parseIsoToSeconds(localMatch.workedDuration);
-            if (localSec > serverSec) {
-              return {
-                ...serverSession,
-                workedDuration: localMatch.workedDuration,
-                status: localMatch.status
-              };
-            }
-          }
-          return serverSession;
-        });
-
-        this.sessionsSignal.set(merged);
+        this.sessionsSignal.set(data || []);
       })
     );
   }
@@ -78,7 +61,7 @@ export class TimerSessionService {
       return of(cached);
     }
 
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.get<TimerSessionResponse>(`${this.apiUrl}/${sessionId}`).pipe(
         catchError(() => of(null))
       );
@@ -96,7 +79,7 @@ export class TimerSessionService {
   }
 
   startTimer(configId: number): Observable<TimerSessionResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${configId}/start`, {}).pipe(
         tap(newSession => {
           this.sessionsSignal.set([...this.sessionsSignal(), newSession]);
@@ -134,7 +117,7 @@ export class TimerSessionService {
   }
 
   pauseTimer(sessionId: number): Observable<TimerSessionResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/pause`, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated))
       );
@@ -159,7 +142,7 @@ export class TimerSessionService {
   }
 
   continueTimer(sessionId: number): Observable<TimerSessionResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/continue`, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated))
       );
@@ -184,7 +167,7 @@ export class TimerSessionService {
   }
 
   finishTimer(sessionId: number): Observable<TimerSessionResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/finish`, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated))
       );
@@ -211,7 +194,7 @@ export class TimerSessionService {
   }
 
   cancelTimer(sessionId: number): Observable<TimerSessionResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/cancel`, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated)),
         catchError(() => of(this.cancelGuestTimer(sessionId)))
@@ -239,7 +222,7 @@ export class TimerSessionService {
   }
 
   clearAllSessions(): Observable<void> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.delete<void>(this.apiUrl).pipe(
         tap(() => this.sessionsSignal.set([]))
       );
@@ -311,19 +294,7 @@ export class TimerSessionService {
     if (!this.isBrowser()) return [];
     const data = localStorage.getItem(this.GUEST_SESSIONS_KEY);
     const sessions: TimerSessionResponse[] = data ? JSON.parse(data) : [];
-    const now = new Date();
-    return sessions.map(s => {
-      if (s.status === 'RUNNING_WORK' && s.currentStartTime) {
-        const start = new Date(s.currentStartTime).getTime();
-        const elapsed = Math.max(0, Math.floor((now.getTime() - start) / 1000));
-        const prev = this.parseIsoToSeconds(s.workedDuration);
-        return {
-          ...s,
-          workedDuration: this.secondsToIso(prev + elapsed)
-        };
-      }
-      return s;
-    });
+    return sessions;
   }
 
   private saveGuestSessions(sessions: TimerSessionResponse[]): void {

@@ -96,15 +96,7 @@ export class StatsComponent implements OnInit, OnDestroy {
     }
 
     sessions.forEach(s => {
-      let workedSec = this.sessionService.parseIsoToSeconds(s.workedDuration);
-
-      if (s.status === 'RUNNING_WORK' && s.currentStartTime) {
-        const start = new Date(s.currentStartTime).getTime();
-        const elapsed = Math.max(0, Math.floor((now.getTime() - start) / 1000));
-        if (elapsed > workedSec) {
-          workedSec = elapsed;
-        }
-      }
+      const workedSec = this.sessionService.parseIsoToSeconds(s.workedDuration);
 
       totalSeconds += workedSec;
 
@@ -179,7 +171,6 @@ export class StatsComponent implements OnInit, OnDestroy {
   }
 
   protected clearStats(): void {
-    // Verlauf direkt leeren ohne Nachfrage
     this.sessionService.clearAllSessions().subscribe({
       next: () => {
         this.processSessions([]);

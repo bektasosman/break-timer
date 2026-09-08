@@ -57,13 +57,17 @@ export class TimerStateService {
     this.state.set(null);
     if (this.isBrowser()) {
       localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem('selectedConfigId');
+      localStorage.removeItem('cachedWorkSec');
+      localStorage.removeItem('cachedBreakSec');
+      localStorage.removeItem('activeTimerTab');
     }
   }
 
   public selectNewConfig(config: TimerConfigResponse): void {
     const currentState = this.getTimerState();
     if (currentState?.currentSessionId && currentState.activeTab === 'work') {
-      this.sessionService.finishTimer(currentState.currentSessionId).subscribe();
+      this.sessionService.cancelTimer(currentState.currentSessionId).subscribe();
     }
 
     const workSec = this.parseIsoToSeconds(config.workDuration);

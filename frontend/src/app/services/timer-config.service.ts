@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AuthService } from './auth.service';
 
 export interface TimerConfigResponse {
   id: number;
@@ -22,7 +21,6 @@ export interface CreateTimerConfigRequest {
 })
 export class TimerConfigService {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/config`;
   private GUEST_CONFIGS_KEY = 'guest_timer_configs';
 
@@ -33,8 +31,12 @@ export class TimerConfigService {
     this.configsSignal.set([]);
   }
 
+  private isLoggedIn(): boolean {
+    return this.isBrowser() && !!localStorage.getItem('auth_token');
+  }
+
   loadAll(): Observable<TimerConfigResponse[]> {
-    const request$ = this.authService.isLoggedIn()
+    const request$ = this.isLoggedIn()
       ? this.http.get<TimerConfigResponse[]>(this.apiUrl).pipe(
           catchError((err) => {
             console.error('Fehler beim Laden der TimerConfigs:', err);
@@ -60,7 +62,7 @@ export class TimerConfigService {
     if (cached) {
       return of(cached);
     }
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.get<TimerConfigResponse>(`${this.apiUrl}/${id}`).pipe(
         catchError(() => of(null))
       );
@@ -70,7 +72,7 @@ export class TimerConfigService {
   }
 
   create(config: CreateTimerConfigRequest): Observable<TimerConfigResponse> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.post<TimerConfigResponse>(this.apiUrl, config).pipe(
         tap(() => this.loadAll().subscribe())
       );
@@ -96,7 +98,7 @@ export class TimerConfigService {
   }
 
   delete(id: number): Observable<void> {
-    if (this.authService.isLoggedIn()) {
+    if (this.isLoggedIn()) {
       return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
         tap(() => this.loadAll().subscribe())
       );

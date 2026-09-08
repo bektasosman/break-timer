@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { TimerStateService } from './timer-state.service';
+import { TimerConfigService } from './timer-config.service';
+import { TimerSessionService } from './timer-session.service';
 
 export interface LoginRequest {
   email: string;
@@ -31,6 +34,10 @@ export interface AuthResponse {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private timerStateService = inject(TimerStateService);
+  private timerConfigService = inject(TimerConfigService);
+  private timerSessionService = inject(TimerSessionService);
+
   private apiUrl = `${environment.apiUrl}/auth`;
   private TOKEN_KEY = 'auth_token';
   private USER_KEY = 'auth_user';
@@ -45,7 +52,7 @@ export class AuthService {
   login(data: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data).pipe(
       tap(response => {
-        this.clearSessionAndTimerCache();
+        this.clearAllAppData();
 
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(this.TOKEN_KEY, response.token);
@@ -67,7 +74,7 @@ export class AuthService {
       localStorage.removeItem(this.TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);
     }
-    this.clearSessionAndTimerCache();
+    this.clearAllAppData();
 
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
@@ -75,15 +82,15 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  public clearSessionAndTimerCache(): void {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.removeItem('break_timer_saved_state');
-    localStorage.removeItem('selectedConfigId');
-    localStorage.removeItem('cachedWorkSec');
-    localStorage.removeItem('cachedBreakSec');
-    localStorage.removeItem('activeTimerTab');
-    localStorage.removeItem('guest_timer_sessions');
-    localStorage.removeItem('guest_timer_configs');
+  public clearAllAppData(): void {
+    this.timerStateService.clearTimerState();
+    this.timerConfigService.resetState();
+    this.timerSessionService.resetState();
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('guest_timer_sessions');
+      localStorage.removeItem('guest_timer_configs');
+    }
   }
 
   getToken(): string | null {
