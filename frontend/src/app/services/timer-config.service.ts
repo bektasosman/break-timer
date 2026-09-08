@@ -1,6 +1,6 @@
-import { Injectable, inject, signal, effect } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, tap } from 'rxjs';
+import { Observable, of, tap, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -29,18 +29,11 @@ export class TimerConfigService {
   private configsSignal = signal<TimerConfigResponse[]>([]);
   public configs = this.configsSignal.asReadonly();
 
-  constructor() {
-    effect(() => {
-      // Bei Login/Logout Signal leeren und frische Configs laden
-      this.authService.isLoggedIn();
-      this.configsSignal.set([]);
-      this.loadAll().subscribe();
-    });
-  }
-
   loadAll(): Observable<TimerConfigResponse[]> {
     const request$ = this.authService.isLoggedIn()
-      ? this.http.get<TimerConfigResponse[]>(this.apiUrl)
+      ? this.http.get<TimerConfigResponse[]>(this.apiUrl).pipe(
+          catchError(() => of(this.getGuestConfigs()))
+        )
       : of(this.getGuestConfigs());
 
     return request$.pipe(

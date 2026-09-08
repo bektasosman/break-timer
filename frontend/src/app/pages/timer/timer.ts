@@ -25,11 +25,15 @@ export class TimerComponent implements OnInit, OnDestroy {
   protected currentSessionId: number | null = null;
   private activeConfigId: number | null = null;
   private countdownInterval: any = null;
-  private remainingSeconds = 0;
+  private remainingSeconds = 1500;
 
   private defaultConfig = signal<TimerConfigResponse | null>(null);
 
   ngOnInit(): void {
+    const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work';
+    this.activeTab.set(savedTab);
+    this.updateTheme(savedTab);
+
     const savedState = this.timerStateService.getTimerState();
 
     if (savedState && (savedState.status === 'PAUSED' || savedState.remainingSeconds > 0)) {
@@ -42,10 +46,6 @@ export class TimerComponent implements OnInit, OnDestroy {
       this.updateDisplay();
       this.updateTheme(savedState.activeTab);
     } else {
-      const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work';
-      this.activeTab.set(savedTab);
-      this.updateTheme(savedTab);
-
       const cachedWorkSec = this.getItem('cachedWorkSec');
       const cachedBreakSec = this.getItem('cachedBreakSec');
 
@@ -60,11 +60,11 @@ export class TimerComponent implements OnInit, OnDestroy {
       this.updateDisplay();
     }
 
-    // Configs im Hintergrund synchronisieren
+    // Configs asynchron im Hintergrund laden
     this.configService.getAll().subscribe({
       next: (configs: TimerConfigResponse[]) => {
         if (configs && configs.length > 0) {
-          const savedIdStr = localStorage.getItem('selectedConfigId');
+          const savedIdStr = this.getItem('selectedConfigId');
           let targetConfig = configs[0];
 
           if (savedIdStr) {
@@ -78,13 +78,12 @@ export class TimerComponent implements OnInit, OnDestroy {
             this.activeConfigId = targetConfig.id;
           }
 
-          // Falls der Timer komplett IDLE ist und noch keine pausierte Zeit existiert:
           if (this.status() === 'IDLE' && (!savedState || savedState.status === 'IDLE')) {
             const workSec = this.parseIsoDurationToSeconds(targetConfig.workDuration);
             const breakSec = this.parseIsoDurationToSeconds(targetConfig.breakDuration);
 
-            localStorage.setItem('cachedWorkSec', workSec.toString());
-            localStorage.setItem('cachedBreakSec', breakSec.toString());
+            this.setItem('cachedWorkSec', workSec.toString());
+            this.setItem('cachedBreakSec', breakSec.toString());
 
             this.remainingSeconds = this.activeTab() === 'work' ? workSec : breakSec;
             this.updateDisplay();
@@ -98,7 +97,6 @@ export class TimerComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopLocalCountdown();
 
-    // Wenn der Timer beim Verlassen der Seite lief -> automatisch pausieren!
     if (this.status() === 'RUNNING') {
       this.status.set('PAUSED');
       if (this.currentSessionId) {
@@ -106,7 +104,6 @@ export class TimerComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Zustand dauerhaft speichern
     this.persistCurrentState();
   }
 
@@ -121,10 +118,10 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.status.set('IDLE');
     this.activeTab.set(tab);
 
-    localStorage.setItem('activeTimerTab', tab);
+    this.setItem('activeTimerTab', tab);
     this.updateTheme(tab);
 
-    const cachedSec = tab === 'work' ? localStorage.getItem('cachedWorkSec') : localStorage.getItem('cachedBreakSec');
+    const cachedSec = tab === 'work' ? this.getItem('cachedWorkSec') : this.getItem('cachedBreakSec');
 
     if (cachedSec) {
       this.remainingSeconds = parseInt(cachedSec, 10);
