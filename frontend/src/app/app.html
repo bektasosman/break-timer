@@ -1,21 +1,96 @@
-<header class="navbar">
-  <nav class="nav-links">
-    <a routerLink="/timer">Timer</a>
-    <a routerLink="/config">Einstellungen</a>
-    <a routerLink="/stats">Statistik</a>
+﻿<header class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/timer" (click)="closeMobileMenu()" class="brand-link">
+      <span class="brand-icon">⏱️</span>
+      <span class="brand-title">BreakTimer</span>
+    </a>
+  </div>
+
+  <!-- Desktop Navigation -->
+  <nav class="nav-links desktop-nav">
+    <a routerLink="/timer" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Timer</a>
+    <a routerLink="/config" routerLinkActive="active">Einstellungen</a>
+    <a routerLink="/stats" routerLinkActive="active">Statistik</a>
   </nav>
 
-  <div class="auth-status">
+  <!-- Desktop Auth Status -->
+  <div class="auth-status desktop-auth">
     @if (authService.isLoggedIn()) {
-      <span>Eingeloggt als {{ authService.currentUser() }}</span>
-      <button (click)="onLogout()">Abmelden</button>
+      <div class="user-pill" [title]="authService.currentUser() || ''">
+        <span class="user-icon">👤</span>
+        <span class="user-name">{{ authService.currentUser() }}</span>
+      </div>
+      <button class="btn-auth btn-logout" (click)="onLogout()">Abmelden</button>
     } @else {
-      <span>Status: Gast</span>
-      <a routerLink="/login">Anmelden</a>
+      <div class="user-pill guest-pill">
+        <span class="user-icon">👤</span>
+        <span class="user-name">Gast</span>
+      </div>
+      <a routerLink="/login" class="btn-auth btn-login" routerLinkActive="active">Anmelden</a>
     }
   </div>
+
+  <!-- Mobile Hamburger Button -->
+  <button 
+    type="button"
+    class="mobile-menu-btn" 
+    (click)="toggleMobileMenu()" 
+    [class.is-active]="isMobileMenuOpen()"
+    aria-label="Menü öffnen/schließen"
+    [attr.aria-expanded]="isMobileMenuOpen()">
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+    <span class="hamburger-bar"></span>
+  </button>
 </header>
 
-<main>
+<!-- Mobile Navigation Drawer / Dropdown -->
+@if (isMobileMenuOpen()) {
+  <div class="mobile-backdrop" (click)="closeMobileMenu()"></div>
+  <div class="mobile-menu open">
+    <div class="mobile-user-card">
+      @if (authService.isLoggedIn()) {
+        <div class="mobile-user-info">
+          <div class="mobile-avatar">👤</div>
+          <div class="mobile-user-details">
+            <span class="mobile-user-status">Eingeloggt als</span>
+            <span class="mobile-user-email">{{ authService.currentUser() }}</span>
+          </div>
+        </div>
+        <button class="mobile-auth-btn mobile-logout-btn" (click)="onLogout()">
+          Abmelden
+        </button>
+      } @else {
+        <div class="mobile-user-info">
+          <div class="mobile-avatar">👤</div>
+          <div class="mobile-user-details">
+            <span class="mobile-user-status">Status</span>
+            <span class="mobile-user-email">Gast-Modus</span>
+          </div>
+        </div>
+        <a routerLink="/login" (click)="closeMobileMenu()" class="mobile-auth-btn mobile-login-btn">
+          Anmelden
+        </a>
+      }
+    </div>
+
+    <nav class="mobile-nav-links">
+      <a routerLink="/timer" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()">
+        <span class="nav-icon">⏱️</span>
+        <span class="nav-text">Timer</span>
+      </a>
+      <a routerLink="/config" routerLinkActive="active" (click)="closeMobileMenu()">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">Einstellungen</span>
+      </a>
+      <a routerLink="/stats" routerLinkActive="active" (click)="closeMobileMenu()">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">Statistik</span>
+      </a>
+    </nav>
+  </div>
+}
+
+<main class="main-content">
   <router-outlet></router-outlet>
 </main>

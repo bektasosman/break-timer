@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+﻿import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -45,11 +45,12 @@ export class AuthService {
   login(data: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data).pipe(
       tap(response => {
-        // Vorherige Timer-Zustände und Konfigurations-Caches komplett leeren
         this.clearSessionAndTimerCache();
 
-        localStorage.setItem(this.TOKEN_KEY, response.token);
-        localStorage.setItem(this.USER_KEY, response.email);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(this.TOKEN_KEY, response.token);
+          localStorage.setItem(this.USER_KEY, response.email);
+        }
 
         this.currentUser.set(response.email);
         this.isLoggedIn.set(true);
@@ -62,9 +63,10 @@ export class AuthService {
   }
 
   logout(): void {
-    // Authentifizierung und alle Timer-Zustände leeren
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem(this.USER_KEY);
+    }
     this.clearSessionAndTimerCache();
 
     this.currentUser.set(null);
@@ -74,6 +76,7 @@ export class AuthService {
   }
 
   private clearSessionAndTimerCache(): void {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem('break_timer_saved_state');
     localStorage.removeItem('selectedConfigId');
     localStorage.removeItem('cachedWorkSec');
@@ -82,10 +85,12 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
   private getStoredUser(): string | null {
+    if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.USER_KEY);
   }
 }

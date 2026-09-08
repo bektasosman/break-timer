@@ -1,10 +1,19 @@
-/* Globale Reset & Hintergrund-Übergänge */
+﻿/* Globale Reset & Hintergrund-Übergänge */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: #ffffff;
   transition: background-color 0.5s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body.bg-work { background-color: #ba4949 !important; }
@@ -14,69 +23,14 @@ body.bg-stats { background-color: #5c6bc0 !important; }
 body.bg-login { background-color: #ba4949 !important; } 
 body.bg-register { background-color: #ba4949 !important; } 
 
-/* Die Navbar-Formatierung */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
-}
-
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.nav-links a, .auth-status a {
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 1rem;
-  opacity: 0.9;
-  transition: opacity 0.2s ease;
-}
-
-.nav-links a:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.auth-status {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  font-size: 0.95rem;
-}
-
-.auth-status button {
-  background: rgba(0, 0, 0, 0.3);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.auth-status button:hover {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-/* Styling & Hover für den Anmelden-Button oben rechts */
-.auth-status a {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
-  text-decoration: none !important;
-  transition: background 0.2s ease, opacity 0.2s ease;
-}
-
-.auth-status a:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.35);
-  text-decoration: none !important;
+/* Responsive adjustments for mobile screens */
+@media (max-width: 600px) {
+  .timer-card {
+    margin: 40px 16px !important;
+    padding: 24px 18px !important;
+  }
+  
+  .timer-display .time {
+    font-size: 4.5rem !important;
+  }
 }
