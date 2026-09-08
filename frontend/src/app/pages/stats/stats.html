@@ -6,7 +6,7 @@
         <h2>📊 Arbeitszeit & Statistiken</h2>
         <p>Überblick über deine Fokuszeiten und Pomodoro-Sessions</p>
       </div>
-      <button type="button" class="btn-cancel" routerLink="/timer" title="Zurück zum Timer">
+      <button type="button" class="btn-back-header" routerLink="/timer" title="Zurück zum Timer">
         ← Zurück
       </button>
     </div>
@@ -14,7 +14,7 @@
     <!-- Schnellübersicht (KPI Cards) -->
     <div class="kpi-grid">
       <div class="kpi-card">
-        <span class="kpi-icon">⏱️</span>
+        <span class="kpi-icon">🎯</span>
         <div class="kpi-info">
           <span class="kpi-label">Heute</span>
           <span class="kpi-value">{{ formatSeconds(todayWorkedSeconds()) }}</span>
@@ -30,7 +30,7 @@
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">🎯</span>
+        <span class="kpi-icon">⚡</span>
         <div class="kpi-info">
           <span class="kpi-label">Sessions</span>
           <span class="kpi-value">{{ totalSessionsCount() }}</span>
@@ -38,7 +38,7 @@
       </div>
 
       <div class="kpi-card">
-        <span class="kpi-icon">⏳</span>
+        <span class="kpi-icon">⏱️</span>
         <div class="kpi-info">
           <span class="kpi-label">Gesamtzeit</span>
           <span class="kpi-value">{{ formatSeconds(totalWorkedSeconds()) }}</span>
@@ -53,20 +53,22 @@
         <span class="chart-subtitle">Fokuszeit pro Tag</span>
       </div>
 
-      <div class="chart-wrapper">
-        <div class="chart-bars">
-          @for (day of chartData(); track day.dateLabel) {
-            <div class="bar-col" [class.is-today]="day.isToday">
-              <div class="bar-val-label">{{ day.formattedDuration }}</div>
-              <div class="bar-track">
-                <div class="bar-fill" [style.height.%]="day.percentage"></div>
+      <div class="chart-scroll-container">
+        <div class="chart-wrapper">
+          <div class="chart-bars">
+            @for (day of chartData(); track day.dateLabel) {
+              <div class="bar-col" [class.is-today]="day.isToday">
+                <div class="bar-val-label">{{ day.formattedDuration }}</div>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.height.%]="day.percentage"></div>
+                </div>
+                <div class="bar-label-container">
+                  <span class="bar-day">{{ day.dayLabel }}</span>
+                  <span class="bar-date">{{ day.dateLabel }}</span>
+                </div>
               </div>
-              <div class="bar-label-container">
-                <span class="bar-day">{{ day.dayLabel }}</span>
-                <span class="bar-date">{{ day.dateLabel }}</span>
-              </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -87,7 +89,7 @@
       } @else if (sessionHistory().length === 0) {
         <div class="empty-history">
           <p>Noch keine Timer-Sessions vorhanden.</p>
-          <span>Starte deine erste Fokusphase im Timer! ✨</span>
+          <span>Starte deine erste Fokusphase im Timer! 🚀</span>
         </div>
       } @else {
         <div class="history-list">

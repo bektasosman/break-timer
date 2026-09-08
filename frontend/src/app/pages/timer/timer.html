@@ -1,18 +1,18 @@
 <div class="timer-card">
-  <!-- Icons oben rechts in der Box -->
+  <!-- Quick-Actions oben rechts (Glas-Look) -->
   <div class="timer-card-icons">
-    <button class="icon-btn" routerLink="/stats" title="Statistik & Arbeitszeiten">
-      📊
+    <button class="icon-action-btn" routerLink="/stats" title="Statistiken ansehen" aria-label="Statistiken">
+      <span class="btn-icon">📊</span>
     </button>
-    <button class="icon-btn icon-btn-gear" routerLink="/config" title="Einstellungen">
-      ⚙️
+    <button class="icon-action-btn gear-btn" routerLink="/config" title="Einstellungen öffnen" aria-label="Einstellungen">
+      <span class="btn-icon">⚙️</span>
     </button>
   </div>
   
   <!-- Das Tab-Menü oben -->
   <div class="timer-tabs">
-    <button [class.active]="activeTab() === 'work'" (click)="switchTab('work')">Work</button>
-    <button [class.active]="activeTab() === 'break'" (click)="switchTab('break')">Break</button>
+    <button type="button" [class.active]="activeTab() === 'work'" (click)="switchTab('work')">Work</button>
+    <button type="button" [class.active]="activeTab() === 'break'" (click)="switchTab('break')">Break</button>
   </div>
 
   <!-- Die Zeitanzeige -->
@@ -22,11 +22,11 @@
 
   <!-- Die Buttons unten -->
   <div class="timer-actions">
-    <button class="btn btn-toggle" (click)="toggleTimer()">
+    <button type="button" class="btn btn-toggle" (click)="toggleTimer()">
       {{ status() === 'RUNNING' ? 'Pause' : (status() === 'PAUSED' ? 'Weiter' : 'Start') }}
     </button>
     
-    <button class="btn btn-skip" (click)="skipSession()">
+    <button type="button" class="btn btn-skip" (click)="skipSession()" title="Session überspringen">
       ⏭️ Skip
     </button>
   </div>

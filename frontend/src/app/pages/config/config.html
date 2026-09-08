@@ -2,67 +2,101 @@
   <div class="config-card">
 
     <div class="config-header">
-      <h2>⚙️ Timer Einstellungen</h2>
-      <p>Erstelle eine individuelle Pomodoro-Konfiguration</p>
+      <div class="header-title-group">
+        <h2>⚙️ Timer Einstellungen</h2>
+        <p>Erstelle ein individuelles Pomodoro-Profil</p>
+      </div>
+      <button type="button" class="btn-back-header" routerLink="/timer" title="Zurück zum Timer">
+        ← Zurück
+      </button>
     </div>
 
     <!-- Formular -->
-    <form (ngSubmit)="saveConfig()">
+    <form (ngSubmit)="saveConfig()" class="config-form">
       <div class="form-group">
-        <label for="name">Name der Konfiguration</label>
-        <input type="text" id="name" name="name" [(ngModel)]="configModel.name" placeholder="z.B. Deep Work, Lernen..."
-          required>
+        <label for="name">Name des Profils</label>
+        <input 
+          type="text" 
+          id="name" 
+          name="name" 
+          [(ngModel)]="configModel.name" 
+          placeholder="z.B. Deep Work, Lernen..."
+          required
+          autocomplete="off">
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="work">Fokuszeit (Minuten)</label>
-          <input type="number" id="work" name="workMinutes" [(ngModel)]="configModel.workMinutes" min="1" required>
+          <label for="work">Fokuszeit (Min.)</label>
+          <input 
+            type="number" 
+            id="work" 
+            name="workMinutes" 
+            [(ngModel)]="configModel.workMinutes" 
+            min="1" 
+            max="180" 
+            placeholder="25"
+            required>
         </div>
         <div class="form-group">
-          <label for="break">Pausenzeit (Minuten)</label>
-          <input type="number" id="break" name="breakMinutes" [(ngModel)]="configModel.breakMinutes" min="1" required>
+          <label for="break">Pausenzeit (Min.)</label>
+          <input 
+            type="number" 
+            id="break" 
+            name="breakMinutes" 
+            [(ngModel)]="configModel.breakMinutes" 
+            min="1" 
+            max="60" 
+            placeholder="5"
+            required>
         </div>
       </div>
 
       <div class="config-actions">
-        <!-- Zurück-Button mit Pfeil-Icon -->
-        <button type="button" class="btn-cancel" routerLink="/">
-          ← Zurück zum Timer
+        <button type="button" class="btn-cancel" routerLink="/timer">
+          ← Abbrechen
         </button>
-
-        <button type="submit" class="btn-save">Hinzufügen</button>
+        <button type="submit" class="btn-save">
+          + Profil speichern
+        </button>
       </div>
     </form>
 
-    <!-- NEU: Die Liste der gespeicherten Konfigurationen -->
+    <!-- Gespeicherte Profile -->
     <div class="config-list-section">
-      <h3>Deine Profile</h3>
+      <div class="section-title-row">
+        <h3>Deine Profile</h3>
+        <span class="profile-hint">Tippe auf ein Profil zum Aktivieren</span>
+      </div>
 
       @if (allConfigs().length === 0) {
-      <p class="empty-hint">Noch keine Profile vorhanden.</p>
+        <p class="empty-hint">Noch keine Profile vorhanden.</p>
       } @else {
-      <div class="config-list">
-        @for (c of allConfigs(); track c.id) {
-        <div class="config-item clickable" [class.active-profile]="isConfigActive(c.id)" (click)="selectConfig(c)">
-          <div class="item-info">
-            <span class="item-name">{{ c.name }}</span>
-            <span class="item-times">⏱ {{ formatDuration(c.workDuration) }} / ☕️ {{ formatDuration(c.breakDuration)
-              }}</span>
-          </div>
+        <div class="config-list">
+          @for (c of allConfigs(); track c.id) {
+            <div class="config-item clickable" [class.active-profile]="isConfigActive(c.id)" (click)="selectConfig(c)">
+              <div class="item-info">
+                <span class="item-name">{{ c.name }}</span>
+                <span class="item-times">⏱️ {{ formatDuration(c.workDuration) }} Fokus / ☕ {{ formatDuration(c.breakDuration) }} Pause</span>
+              </div>
 
-          @if (c.name !== 'Standard Pomodoro') {
-          <button class="btn-delete" (click)="deleteConfig(c.id, $event)">🗑️</button>
-          } @else {
-          <span class="lock-icon" title="Geschütztes Profil">🔒</span>
+              <div class="item-actions">
+                @if (isConfigActive(c.id)) {
+                  <span class="active-badge">Aktiv</span>
+                }
+                @if (c.name !== 'Standard Pomodoro') {
+                  <button class="btn-delete" (click)="deleteConfig(c.id, $event)" title="Profil löschen" aria-label="Profil löschen">
+                    🗑️
+                  </button>
+                } @else {
+                  <span class="lock-icon" title="Standardprofil">🔒</span>
+                }
+              </div>
+            </div>
           }
         </div>
-        }
-      </div>
       }
     </div>
-
-
 
   </div>
 </div>

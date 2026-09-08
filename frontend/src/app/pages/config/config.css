@@ -1,214 +1,255 @@
 .config-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 90vh;
-  font-family: sans-serif;
+  align-items: flex-start;
+  min-height: calc(100dvh - 70px);
+  width: 100%;
+  padding: 1.5rem 1rem max(2rem, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Die Config-Box im kontrastreichen Deep-Blue Glas-Look */
 .config-card {
-  /* Ein schickes, abgedunkeltes Blau-Grau mit Transparenz */
-  background-color: rgba(20, 35, 55, 0.65) !important; 
+  background-color: rgba(20, 35, 55, 0.72) !important; 
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 16px;
-  padding: 30px;
+  padding: 24px;
   width: 100%;
-  max-width: 460px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten für Tiefe */
-  color: #ffffff; 
+  max-width: 500px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.header-title-group {
+  flex: 1;
+  min-width: 180px;
 }
 
 .config-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 1.6rem;
+  margin: 0 0 6px 0;
+  font-size: 1.45rem;
   color: #ffffff;
+  line-height: 1.2;
 }
 
 .config-header p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.75); /* Leicht transparentes Weiß für den Untertext */
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+}
+
+.btn-back-header {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-back-header:hover {
+  background-color: #ffffff !important;
+  color: #142337 !important;
+  transform: translateY(-1px);
 }
 
 /* Formular-Eingabefelder */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* 2-Spalten-Layout fuer Fokus & Pause */
 .form-row {
-  display: flex;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-row .form-group {
-  flex: 1;
+  min-width: 0;
 }
 
 label {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 input {
-  padding: 12px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding: 10px 14px;
+  height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  font-size: 1rem;
-  background-color: rgba(255, 255, 255, 0.9); /* Eingabefelder leicht weiß für perfekte Lesbarkeit */
-  color: #333333;
+  font-size: 0.95rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #1a1a1a;
   transition: all 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 input:focus {
   outline: none;
   border-color: #ffffff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
 /* Buttons unten */
 .config-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 25px;
-}
-
-/* In config.css */
-.config-container {
-  max-height: calc(100vh - 90px); /* Verhindert, dass die Seite über das Fenster hinausragt */
-  overflow-y: auto;               /* Aktiviert den vertikalen Scrollbalken bei viel Inhalt */
-  padding: 2rem;
-  box-sizing: border-box;
-
-  /* Schönere Scrollleiste (optional) */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .config-actions button {
-  padding: 14px 20px;
+  padding: 12px 16px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
   flex: 1;
-  transition: all 0.1s ease;
+  transition: all 0.15s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .btn-cancel {
-  background-color: rgba(255, 255, 255, 0.08) !important; /* Ganz zarter, heller Hintergrund */
-  color: #ffffff !important; /* Strahlend weiße Schrift */
-  border: 1px solid rgba(255, 255, 255, 0.4) !important; /* Deutlich sichtbarer, feiner Rahmen */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px; /* Abstand zwischen Pfeil und Text */
-  transition: all 0.25s ease-in-out !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
 }
 
-/* Wenn man mit der Maus über den Zurück-Button fährt */
 .btn-cancel:hover {
-  background-color: #ffffff !important; /* Button wird vollflächig weiß */
-  color: #142337 !important; /* Schrift wird dunkel für perfekten Kontrast */
-  border-color: #ffffff !important;
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); /* Sanfter, weißer Leuchteffekt */
-  transform: translateY(-1px); /* Wandert minimal nach oben */
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px);
 }
 
 .btn-cancel:active {
-  transform: translateY(2px);
-  box-shadow: none;
+  transform: translateY(1px);
 }
 
-
-/* Der Speicher-Button wird zum strahlend weißen Highlight */
 .btn-save {
   background-color: #ffffff;
-  color: #142337 !important; /* Dunkle Schrift auf weißem Button */
-  box-shadow: 0 4px 0px rgba(0, 0, 0, 0.2);
+  color: #142337 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-save:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
 }
 
 .btn-save:active {
-  transform: translateY(4px);
+  transform: translateY(2px);
   box-shadow: none;
 }
 
 /* Profil-Liste unten */
 .config-list-section {
-  margin-top: 30px;
+  margin-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 20px;
+  padding-top: 18px;
 }
 
-.config-list-section h3 {
-  margin: 0 0 15px 0;
-  font-size: 1.2rem;
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.section-title-row h3 {
+  margin: 0;
+  font-size: 1.15rem;
   color: #ffffff;
+}
+
+.profile-hint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .empty-hint {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
   font-style: italic;
+  padding: 16px 0;
 }
 
-/* Der Container für die Profile */
+/* Der Container fuer die Profile */
 .config-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 280px; /* Etwas mehr Platz nach unten gewähren */
-  overflow-y: auto; /* Erlaubt Scrollen im Hintergrund */
-  padding-right: 6px;
-  /* --- HIER WIRD DER SCROLLBALKEN US-STYLE KOMPLETT UNSICHTBAR GEMACHT --- */
-  scrollbar-width: thin; /* Für Firefox */
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  -ms-overflow-style: none; /* Für den alten Internet Explorer */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* --- Chrome, Safari, Edge (Schicke Glas-Scrollleiste) --- */
-.config-list::-webkit-scrollbar {
-  width: 6px;                 /* Sehr dezente, schmale Scrollleiste */
-  display: block;             /* Macht die Scrollleiste wieder sichtbar */
-}
-
-.config-list::-webkit-scrollbar-track {
-  background: transparent;    /* Transparenter Hintergrund */
-}
-
-.config-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25); /* Leicht transparentes Weiß */
-  border-radius: 10px;
-}
-
-.config-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);  /* Wird beim Drüberfahren heller */
-}
-
-/* Basis-Design für jedes Profil */
+/* Basis-Design fuer jedes Profil */
 .config-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.06); /* Ganz zarter Schleier */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
-  padding: 14px 18px;
+  padding: 12px 14px;
   color: #ffffff;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Seidiger Übergang */
+  transition: all 0.2s ease;
+  gap: 10px;
 }
 
-/* Hover-Effekt für inaktive Elemente */
 .config-item.clickable:not(.active-profile):hover {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.14);
   transform: translateY(-1px);
 }
 
@@ -216,16 +257,14 @@ input:focus {
   cursor: pointer;
 }
 
-/* === NEU: DAS AKTIVE PROFIL (Minimalistischer iOS-Style) === */
+/* Aktives Profil */
 .config-item.active-profile {
-  background-color: rgba(255, 255, 255, 0.95) !important; /* Fast deckendes, edles Weiß */
-  color: #142337 !important; /* Schrift wird dunkel für perfekten Kontrast */
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #142337 !important;
   border: 1px solid #ffffff !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  transform: translateX(4px); /* Schiebt sich elegant ein Stück nach rechts heraus */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-/* Sorgt dafür, dass die graue Unterzeitschrift beim aktiven Profil dunkelgrau wird */
 .config-item.active-profile .item-times {
   color: #555555 !important;
 }
@@ -233,47 +272,78 @@ input:focus {
 .item-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
 }
 
 .item-name {
-  font-weight: bold;
-  font-size: 1.05rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-times {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6); /* Schickes, dezentes Grau-Weiß im Standard */
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Die Mülltonne */
-.btn-delete {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-/* Mülltonne passt sich farblich dem Zustand an */
-.config-item.active-profile .btn-delete {
-  color: #142337;
-}
-.config-item:not(.active-profile) .btn-delete {
+.active-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #142337;
   color: #ffffff;
-  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Loeschen Button */
+.btn-delete {
+  background: rgba(244, 67, 54, 0.12);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: all 0.2s;
 }
 
 .btn-delete:hover {
-  background-color: rgba(244, 67, 54, 0.2) !important;
-  opacity: 1 !important;
+  background-color: rgba(244, 67, 54, 0.35) !important;
+  transform: scale(1.1);
 }
 
 .lock-icon {
-  font-size: 1rem;
-  padding: 6px;
-  opacity: 0.5;
-  cursor: not-allowed;
+  font-size: 0.95rem;
+  opacity: 0.6;
+}
+
+@media (max-width: 480px) {
+  .config-card {
+    padding: 18px 14px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .config-actions {
+    flex-direction: column;
+  }
 }

@@ -10,15 +10,21 @@ import lombok.RequiredArgsConstructor;
 public final class TimerConfigMapper {
 
     public static TimerConfig toEntity(CreateTimerConfigRequest dto, User user) {
+        if (dto == null) {
+            return null;
+        }
         TimerConfig config = new TimerConfig();
         config.setName(dto.name());
         config.setWorkDuration(dto.workDuration());
         config.setBreakDuration(dto.breakDuration());
         config.setUser(user);
         return config;
-
     }
-        public static TimerConfigResponse toResponse(TimerConfig entity) {
+
+    public static TimerConfigResponse toResponse(TimerConfig entity) {
+        if (entity == null) {
+            return null;
+        }
         return new TimerConfigResponse(
                 entity.getId(),
                 entity.getName(),
