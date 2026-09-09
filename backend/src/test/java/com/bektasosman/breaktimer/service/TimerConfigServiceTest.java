@@ -6,6 +6,7 @@ import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
+import com.bektasosman.breaktimer.repository.TimerSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +28,9 @@ class TimerConfigServiceTest {
 
     @Mock
     private TimerConfigRepository timerConfigRepo;
+
+    @Mock
+    private TimerSessionRepository timerSessionRepo;
 
     @Mock
     private CurrentUserService currentUserService;
@@ -109,6 +114,7 @@ class TimerConfigServiceTest {
     void shouldDeleteTimerConfigSuccessfully() {
         when(currentUserService.getCurrentUser()).thenReturn(sampleUser);
         when(timerConfigRepo.findByIdAndUser(10L, sampleUser)).thenReturn(Optional.of(sampleConfig));
+        when(timerSessionRepo.findByUser(sampleUser)).thenReturn(Collections.emptyList());
 
         timerConfigService.delete(10L);
 

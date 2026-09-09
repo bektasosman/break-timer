@@ -14,4 +14,23 @@ public record TimerSessionResponse(
         Duration workedDuration,
         Instant finishedAt,
         Status status
-) {}
+) {
+    public TimerSessionResponse(
+            Long id,
+            TimerConfigResponse timerConfig,
+            Instant currentStartTime,
+            Duration workedDuration,
+            Instant finishedAt,
+            Status status
+    ) {
+        this(
+                id,
+                timerConfig,
+                timerConfig != null ? timerConfig.name() : null,
+                currentStartTime,
+                workedDuration,
+                finishedAt,
+                status
+        );
+    }
+}

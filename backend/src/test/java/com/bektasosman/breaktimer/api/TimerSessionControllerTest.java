@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -38,6 +40,7 @@ class TimerSessionControllerTest {
         sampleResponse = new TimerSessionResponse(
                 100L,
                 configResponse,
+                "Pomodoro",
                 Instant.now(),
                 Duration.ZERO,
                 null,
@@ -80,12 +83,13 @@ class TimerSessionControllerTest {
         TimerSessionResponse pausedResponse = new TimerSessionResponse(
                 100L,
                 sampleResponse.timerConfig(),
+                "Pomodoro",
                 sampleResponse.currentStartTime(),
                 Duration.ofMinutes(5),
                 null,
                 Status.PAUSED_WORK
         );
-        when(timerSessionService.pauseTimer(100L)).thenReturn(pausedResponse);
+        when(timerSessionService.pauseTimer(eq(100L), any())).thenReturn(pausedResponse);
 
         mockMvc.perform(post("/session/100/pause"))
                 .andExpect(status().isOk())
@@ -108,12 +112,13 @@ class TimerSessionControllerTest {
         TimerSessionResponse finishedResponse = new TimerSessionResponse(
                 100L,
                 sampleResponse.timerConfig(),
+                "Pomodoro",
                 sampleResponse.currentStartTime(),
                 Duration.ofMinutes(25),
                 Instant.now(),
                 Status.FINISHED
         );
-        when(timerSessionService.finishTimer(100L)).thenReturn(finishedResponse);
+        when(timerSessionService.finishTimer(eq(100L), any())).thenReturn(finishedResponse);
 
         mockMvc.perform(post("/session/100/finish"))
                 .andExpect(status().isOk())

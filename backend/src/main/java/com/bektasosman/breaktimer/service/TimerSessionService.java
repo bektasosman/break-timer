@@ -49,6 +49,11 @@ public class TimerSessionService {
     }
 
     @Transactional
+    public TimerSessionResponse pauseTimer(Long sessionId) {
+        return pauseTimer(sessionId, null);
+    }
+
+    @Transactional
     public TimerSessionResponse pauseTimer(Long sessionId, Long workedSeconds) {
         Instant now = Instant.now();
         User currentUser = currentUserService.getCurrentUser();
@@ -100,6 +105,11 @@ public class TimerSessionService {
     }
 
     @Transactional
+    public TimerSessionResponse finishTimer(Long sessionId) {
+        return finishTimer(sessionId, null);
+    }
+
+    @Transactional
     public TimerSessionResponse finishTimer(Long sessionId, Long workedSeconds) {
         Instant now = Instant.now();
         TimerSession session = timerSessionRepo.findById(sessionId)
@@ -114,6 +124,11 @@ public class TimerSessionService {
         TimerSession saved = timerSessionRepo.save(session);
         scheduler.cancelFinish(saved.getId());
         return TimerSessionMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public TimerSessionResponse cancelTimer(Long sessionId) {
+        return cancelTimer(sessionId, null);
     }
 
     @Transactional
