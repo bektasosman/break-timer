@@ -124,10 +124,8 @@ export class StatsComponent implements OnInit, OnDestroy {
       } else if (s.status === 'CANCELLED') {
         statusLabel = 'Abgebrochen';
         statusClass = 'cancelled';
-      } else if (s.status === 'RUNNING_WORK') {
-        statusLabel = 'Laufend';
-        statusClass = 'running';
       } else {
+        // Beim Betrachten der Stats ist die Session immer pausiert
         statusLabel = 'Pausiert';
         statusClass = 'paused';
       }

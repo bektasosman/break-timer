@@ -17,8 +17,13 @@ public final class TimerSessionMapper {
 
         Duration worked = session.getWorkedDuration() != null ? session.getWorkedDuration() : Duration.ZERO;
         String name = session.getConfigName();
-        if (name == null && session.getTimerConfig() != null) {
-            name = session.getTimerConfig().getName();
+        if (name == null || name.isBlank()) {
+            if (session.getTimerConfig() != null) {
+                name = session.getTimerConfig().getName();
+            }
+        }
+        if (name == null || name.isBlank()) {
+            name = "Pomodoro Session";
         }
 
         return new TimerSessionResponse(
