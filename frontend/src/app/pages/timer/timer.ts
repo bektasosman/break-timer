@@ -60,7 +60,7 @@ export class TimerComponent implements OnInit, OnDestroy {
       this.updateDisplay();
     }
 
-    // Configs asynchron im Hintergrund laden
+    // Configs asynchron im Hintergrund abgleichen
     this.configService.getAll().subscribe({
       next: (configs: TimerConfigResponse[]) => {
         if (configs && configs.length > 0) {
@@ -70,7 +70,12 @@ export class TimerComponent implements OnInit, OnDestroy {
           if (savedIdStr) {
             const savedId = parseInt(savedIdStr, 10);
             const found = configs.find(c => c.id === savedId);
-            if (found) targetConfig = found;
+            if (found) {
+              targetConfig = found;
+            } else {
+              // Falls die zuvor ausgewählte Config gelöscht wurde:
+              this.timerStateService.selectNewConfig(targetConfig);
+            }
           }
 
           this.defaultConfig.set(targetConfig);
@@ -99,18 +104,26 @@ export class TimerComponent implements OnInit, OnDestroy {
     if (this.status() === 'RUNNING') {
       this.status.set('PAUSED');
       if (this.currentSessionId) {
-        this.sessionService.pauseTimer(this.currentSessionId).subscribe();
+        const workedSec = this.getWorkedSeconds();
+        this.sessionService.pauseTimer(this.currentSessionId, workedSec).subscribe();
       }
     }
 
     this.persistCurrentState();
   }
 
+  private getWorkedSeconds(): number {
+    const config = this.defaultConfig();
+    const totalSec = config ? this.parseIsoDurationToSeconds(config.workDuration) : 1500;
+    return Math.max(0, totalSec - this.remainingSeconds);
+  }
+
   protected switchTab(tab: 'work' | 'break'): void {
     this.stopLocalCountdown();
 
     if (this.currentSessionId && this.activeTab() === 'work') {
-      this.sessionService.cancelTimer(this.currentSessionId).subscribe();
+      const workedSec = this.getWorkedSeconds();
+      this.sessionService.cancelTimer(this.currentSessionId, workedSec).subscribe();
       this.currentSessionId = null;
     }
 
@@ -144,7 +157,8 @@ export class TimerComponent implements OnInit, OnDestroy {
       this.stopLocalCountdown();
       this.status.set('PAUSED');
       if (this.currentSessionId) {
-        this.sessionService.pauseTimer(this.currentSessionId).subscribe();
+        const workedSec = this.getWorkedSeconds();
+        this.sessionService.pauseTimer(this.currentSessionId, workedSec).subscribe();
       }
       this.persistCurrentState();
     } else {
@@ -170,7 +184,8 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.stopLocalCountdown();
 
     if (this.currentSessionId && this.activeTab() === 'work') {
-      this.sessionService.cancelTimer(this.currentSessionId).subscribe();
+      const workedSec = this.getWorkedSeconds();
+      this.sessionService.cancelTimer(this.currentSessionId, workedSec).subscribe();
       this.currentSessionId = null;
     }
 
@@ -182,7 +197,9 @@ export class TimerComponent implements OnInit, OnDestroy {
     this.stopLocalCountdown();
 
     if (this.currentSessionId && this.activeTab() === 'work') {
-      this.sessionService.finishTimer(this.currentSessionId).subscribe();
+      const config = this.defaultConfig();
+      const totalSec = config ? this.parseIsoDurationToSeconds(config.workDuration) : 1500;
+      this.sessionService.finishTimer(this.currentSessionId, totalSec).subscribe();
       this.currentSessionId = null;
     }
 

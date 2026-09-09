@@ -10,7 +10,6 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 
 @Setter
 @Getter
@@ -26,14 +25,17 @@ public class TimerSession {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private TimerConfig timerConfig;
 
+    @Column(name = "config_name")
+    private String configName;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    Instant currentStartTime;
-    Duration workedDuration;
-    Instant finishedAt;
-    Status status;
-    Instant expectedFinishTime;
+    private Instant currentStartTime;
+    private Duration workedDuration;
+    private Instant finishedAt;
+    private Status status;
+    private Instant expectedFinishTime;
 
 }

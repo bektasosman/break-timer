@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 export interface TimerSessionResponse {
   id: number;
   timerConfig: TimerConfigResponse | null;
+  configName?: string | null;
   currentStartTime: string | null;
   workedDuration: string;
   finishedAt: string | null;
@@ -103,6 +104,7 @@ export class TimerSessionService {
     const newSession: TimerSessionResponse = {
       id: Date.now(),
       timerConfig: selectedConfig,
+      configName: selectedConfig ? selectedConfig.name : 'Standard Pomodoro',
       status: 'RUNNING_WORK',
       workedDuration: 'PT0S',
       currentStartTime: now.toISOString(),
@@ -116,24 +118,32 @@ export class TimerSessionService {
     return newSession;
   }
 
-  pauseTimer(sessionId: number): Observable<TimerSessionResponse> {
+  pauseTimer(sessionId: number, workedSeconds?: number): Observable<TimerSessionResponse> {
+    this.optimisticUpdate(sessionId, 'PAUSED_WORK', workedSeconds);
+
     if (this.isLoggedIn()) {
-      return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/pause`, {}).pipe(
-        tap(updated => this.updateSessionInSignal(updated))
+      const url = workedSeconds !== undefined 
+        ? `${this.apiUrl}/${sessionId}/pause?workedSeconds=${workedSeconds}`
+        : `${this.apiUrl}/${sessionId}/pause`;
+      return this.http.post<TimerSessionResponse>(url, {}).pipe(
+        tap(updated => this.updateSessionInSignal(updated)),
+        catchError(() => of(this.pauseGuestTimer(sessionId, workedSeconds)))
       );
     }
 
-    return of(this.pauseGuestTimer(sessionId));
+    return of(this.pauseGuestTimer(sessionId, workedSeconds));
   }
 
-  private pauseGuestTimer(sessionId: number): TimerSessionResponse {
+  private pauseGuestTimer(sessionId: number, workedSeconds?: number): TimerSessionResponse {
     const sessions = this.getGuestSessions();
     const session = sessions.find(s => s.id === sessionId);
     if (session) {
-      const now = new Date();
+      if (workedSeconds !== undefined) {
+        session.workedDuration = this.secondsToIso(Math.max(0, workedSeconds));
+      } else {
+        this.addWorkedTime(session, new Date());
+      }
       session.status = 'PAUSED_WORK';
-
-      this.addWorkedTime(session, now);
       this.saveGuestSessions(sessions);
       this.sessionsSignal.set(sessions);
       return session;
@@ -142,6 +152,8 @@ export class TimerSessionService {
   }
 
   continueTimer(sessionId: number): Observable<TimerSessionResponse> {
+    this.optimisticUpdate(sessionId, 'RUNNING_WORK');
+
     if (this.isLoggedIn()) {
       return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/continue`, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated))
@@ -166,22 +178,30 @@ export class TimerSessionService {
     return session!;
   }
 
-  finishTimer(sessionId: number): Observable<TimerSessionResponse> {
+  finishTimer(sessionId: number, workedSeconds?: number): Observable<TimerSessionResponse> {
+    this.optimisticUpdate(sessionId, 'FINISHED', workedSeconds);
+
     if (this.isLoggedIn()) {
-      return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/finish`, {}).pipe(
-        tap(updated => this.updateSessionInSignal(updated))
+      const url = workedSeconds !== undefined 
+        ? `${this.apiUrl}/${sessionId}/finish?workedSeconds=${workedSeconds}`
+        : `${this.apiUrl}/${sessionId}/finish`;
+      return this.http.post<TimerSessionResponse>(url, {}).pipe(
+        tap(updated => this.updateSessionInSignal(updated)),
+        catchError(() => of(this.finishGuestTimer(sessionId, workedSeconds)))
       );
     }
 
-    return of(this.finishGuestTimer(sessionId));
+    return of(this.finishGuestTimer(sessionId, workedSeconds));
   }
 
-  private finishGuestTimer(sessionId: number): TimerSessionResponse {
+  private finishGuestTimer(sessionId: number, workedSeconds?: number): TimerSessionResponse {
     const sessions = this.getGuestSessions();
     const session = sessions.find(s => s.id === sessionId);
     if (session) {
       const now = new Date();
-      if (session.status === 'RUNNING_WORK') {
+      if (workedSeconds !== undefined) {
+        session.workedDuration = this.secondsToIso(Math.max(0, workedSeconds));
+      } else if (session.status === 'RUNNING_WORK') {
         this.addWorkedTime(session, now);
       }
       session.status = 'FINISHED';
@@ -193,23 +213,30 @@ export class TimerSessionService {
     return session!;
   }
 
-  cancelTimer(sessionId: number): Observable<TimerSessionResponse> {
+  cancelTimer(sessionId: number, workedSeconds?: number): Observable<TimerSessionResponse> {
+    this.optimisticUpdate(sessionId, 'CANCELLED', workedSeconds);
+
     if (this.isLoggedIn()) {
-      return this.http.post<TimerSessionResponse>(`${this.apiUrl}/${sessionId}/cancel`, {}).pipe(
+      const url = workedSeconds !== undefined 
+        ? `${this.apiUrl}/${sessionId}/cancel?workedSeconds=${workedSeconds}`
+        : `${this.apiUrl}/${sessionId}/cancel`;
+      return this.http.post<TimerSessionResponse>(url, {}).pipe(
         tap(updated => this.updateSessionInSignal(updated)),
-        catchError(() => of(this.cancelGuestTimer(sessionId)))
+        catchError(() => of(this.cancelGuestTimer(sessionId, workedSeconds)))
       );
     }
 
-    return of(this.cancelGuestTimer(sessionId));
+    return of(this.cancelGuestTimer(sessionId, workedSeconds));
   }
 
-  private cancelGuestTimer(sessionId: number): TimerSessionResponse {
+  private cancelGuestTimer(sessionId: number, workedSeconds?: number): TimerSessionResponse {
     const sessions = this.getGuestSessions();
     const session = sessions.find(s => s.id === sessionId);
     if (session) {
       const now = new Date();
-      if (session.status === 'RUNNING_WORK') {
+      if (workedSeconds !== undefined) {
+        session.workedDuration = this.secondsToIso(Math.max(0, workedSeconds));
+      } else if (session.status === 'RUNNING_WORK') {
         this.addWorkedTime(session, now);
       }
       session.status = 'CANCELLED';
@@ -219,6 +246,25 @@ export class TimerSessionService {
       return session;
     }
     return session!;
+  }
+
+  private optimisticUpdate(
+    sessionId: number, 
+    status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'FINISHED' | 'CANCELLED',
+    workedSeconds?: number
+  ): void {
+    const list = this.sessionsSignal().map(s => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          status,
+          workedDuration: workedSeconds !== undefined ? this.secondsToIso(Math.max(0, workedSeconds)) : s.workedDuration,
+          finishedAt: (status === 'FINISHED' || status === 'CANCELLED') ? new Date().toISOString() : s.finishedAt
+        };
+      }
+      return s;
+    });
+    this.sessionsSignal.set(list);
   }
 
   clearAllSessions(): Observable<void> {

@@ -132,9 +132,11 @@ export class StatsComponent implements OnInit, OnDestroy {
         statusClass = 'paused';
       }
 
+      const displayName = s.configName || s.timerConfig?.name || 'Pomodoro Session';
+
       historyItems.push({
         id: s.id,
-        configName: s.timerConfig?.name || 'Pomodoro Session',
+        configName: displayName,
         dateStr: this.formatDateTime(sessionDate),
         timestamp: sessionTimestamp,
         durationFormatted: this.formatSeconds(workedSec),
@@ -157,7 +159,7 @@ export class StatsComponent implements OnInit, OnDestroy {
         dateLabel: `${this.padZero(item.date.getDate())}.${this.padZero(item.date.getMonth() + 1)}.`,
         seconds: sec,
         formattedDuration: this.formatSecondsCompact(sec),
-        percentage: maxSec > 0 ? Math.min(100, Math.round((sec / maxSec) * 100)) : 0,
+        percentage: (maxSec > 0 && sec > 0) ? Math.max(5, Math.min(100, Math.round((sec / maxSec) * 100))) : 0,
         isToday
       };
     });

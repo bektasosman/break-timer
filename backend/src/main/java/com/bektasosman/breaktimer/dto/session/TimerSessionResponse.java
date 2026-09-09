@@ -9,6 +9,7 @@ import java.time.Instant;
 public record TimerSessionResponse(
         Long id,
         TimerConfigResponse timerConfig,
+        String configName,
         Instant currentStartTime,
         Duration workedDuration,
         Instant finishedAt,

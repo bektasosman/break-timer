@@ -16,10 +16,15 @@ public final class TimerSessionMapper {
         }
 
         Duration worked = session.getWorkedDuration() != null ? session.getWorkedDuration() : Duration.ZERO;
+        String name = session.getConfigName();
+        if (name == null && session.getTimerConfig() != null) {
+            name = session.getTimerConfig().getName();
+        }
 
         return new TimerSessionResponse(
                 session.getId(),
                 TimerConfigMapper.toResponse(session.getTimerConfig()),
+                name,
                 session.getCurrentStartTime(),
                 worked,
                 session.getFinishedAt(),

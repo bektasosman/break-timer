@@ -60,7 +60,7 @@
               <div class="bar-col" [class.is-today]="day.isToday">
                 <div class="bar-val-label">{{ day.formattedDuration }}</div>
                 <div class="bar-track">
-                  <div class="bar-fill" [style.height.%]="day.percentage"></div>
+                  <div class="bar-fill" [class.has-data]="day.seconds > 0" [style.height.%]="day.percentage"></div>
                 </div>
                 <div class="bar-label-container">
                   <span class="bar-day">{{ day.dayLabel }}</span>

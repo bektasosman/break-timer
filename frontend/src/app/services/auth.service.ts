@@ -70,6 +70,15 @@ export class AuthService {
   }
 
   logout(): void {
+    const currentState = this.timerStateService.getTimerState();
+    if (currentState?.currentSessionId) {
+      const remaining = currentState.remainingSeconds || 0;
+      const cachedWorkStr = typeof localStorage !== 'undefined' ? localStorage.getItem('cachedWorkSec') : null;
+      const totalWork = cachedWorkStr ? parseInt(cachedWorkStr, 10) : 1500;
+      const worked = Math.max(0, totalWork - remaining);
+      this.timerSessionService.cancelTimer(currentState.currentSessionId, worked).subscribe();
+    }
+
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(this.TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);

@@ -26,8 +26,10 @@ public class TimerSessionController {
     }
 
     @PostMapping("/{id}/pause")
-    public TimerSessionResponse pause(@PathVariable Long id) {
-        return timerSessionService.pauseTimer(id);
+    public TimerSessionResponse pause(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long workedSeconds) {
+        return timerSessionService.pauseTimer(id, workedSeconds);
     }
 
     @PostMapping("/{id}/continue")
@@ -36,13 +38,17 @@ public class TimerSessionController {
     }
 
     @PostMapping("/{id}/finish")
-    public TimerSessionResponse finishTimer(@PathVariable Long id) {
-        return timerSessionService.finishTimer(id);
+    public TimerSessionResponse finishTimer(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long workedSeconds) {
+        return timerSessionService.finishTimer(id, workedSeconds);
     }
 
     @PostMapping("/{id}/cancel")
-    public TimerSessionResponse cancelTimer(@PathVariable Long id) {
-        return timerSessionService.cancelTimer(id);
+    public TimerSessionResponse cancelTimer(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long workedSeconds) {
+        return timerSessionService.cancelTimer(id, workedSeconds);
     }
 
     @PostMapping("/{configId}/start")

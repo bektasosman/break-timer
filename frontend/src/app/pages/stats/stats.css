@@ -1,4 +1,4 @@
-/* Haupt-Container fr die Statistikseite */
+/* Haupt-Container für die Statistikseite */
 .stats-container {
   display: flex;
   justify-content: center;
@@ -26,7 +26,7 @@
   box-sizing: border-box;
 }
 
-/* Header & Zurck-Button */
+/* Header & Zurück-Button */
 .stats-header {
   display: flex;
   justify-content: space-between;
@@ -142,7 +142,9 @@
 .section-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
 }
 
 .section-title-row h3 {
@@ -216,10 +218,17 @@
   background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
   border-radius: 8px;
   transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 4px;
+  height: 0;
+  min-height: 0;
+  opacity: 0;
 }
 
-.bar-col.is-today .bar-fill {
+.bar-fill.has-data {
+  min-height: 4px;
+  opacity: 1;
+}
+
+.bar-col.is-today .bar-fill.has-data {
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
 }
@@ -244,24 +253,30 @@
 /* Historie */
 .history-section {
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 18px;
+  padding-top: 20px;
 }
 
 .btn-clear {
-  background: rgba(244, 67, 54, 0.15);
-  border: 1px solid rgba(244, 67, 54, 0.35);
+  background: rgba(244, 67, 54, 0.18);
+  border: 1px solid rgba(244, 67, 54, 0.4);
   color: #fca5a5;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.btn-clear:hover {
+.btn-clear:hover,
+.btn-clear:active {
   background-color: rgba(244, 67, 54, 0.35);
   color: #ffffff;
+  transform: scale(1.02);
 }
 
 .empty-history {
@@ -280,11 +295,11 @@
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   max-height: 320px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-right: 4px;
+  padding-right: 6px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
@@ -395,5 +410,10 @@
 
   .stats-header h2 {
     font-size: 1.3rem;
+  }
+
+  .btn-clear {
+    padding: 6px 10px;
+    font-size: 0.78rem;
   }
 }

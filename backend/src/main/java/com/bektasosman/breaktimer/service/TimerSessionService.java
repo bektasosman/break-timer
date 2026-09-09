@@ -37,24 +37,29 @@ public class TimerSessionService {
         Instant expectedFinishTime = Instant.now().plus(timerConfig.getWorkDuration());
         session.setUser(currentUser);
         session.setTimerConfig(timerConfig);
+        session.setConfigName(timerConfig.getName());
         session.setCurrentStartTime(now);
         session.setWorkedDuration(Duration.ZERO);
         session.setFinishedAt(null);
         session.setStatus(Status.RUNNING_WORK);
         session.setExpectedFinishTime(expectedFinishTime);
         TimerSession saved = timerSessionRepo.save(session);
-        scheduler.scheduleFinish(saved.getId(), saved.getExpectedFinishTime(), () -> finishTimer(saved.getId()));
+        scheduler.scheduleFinish(saved.getId(), saved.getExpectedFinishTime(), () -> finishTimer(saved.getId(), null));
         return TimerSessionMapper.toResponse(saved);
     }
 
     @Transactional
-    public TimerSessionResponse pauseTimer(Long sessionId) {
+    public TimerSessionResponse pauseTimer(Long sessionId, Long workedSeconds) {
         Instant now = Instant.now();
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
         session.setStatus(Status.PAUSED_WORK);
-        addWorkedTime(session, now);
+        if (workedSeconds != null) {
+            session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
+        } else if (session.getCurrentStartTime() != null) {
+            addWorkedTime(session, now);
+        }
         session = timerSessionRepo.save(session);
         scheduler.cancelFinish(session.getId());
         return TimerSessionMapper.toResponse(session);
@@ -84,18 +89,25 @@ public class TimerSessionService {
         Instant now = Instant.now();
         session.setStatus(Status.RUNNING_WORK);
         session.setCurrentStartTime(now);
-        session.setExpectedFinishTime(now.plus(session.getTimerConfig().getWorkDuration().minus(session.getWorkedDuration())));
-        scheduler.scheduleFinish(session.getId(), session.getExpectedFinishTime(), () -> finishTimer(session.getId()));
+        Duration totalConfig = session.getTimerConfig() != null ? session.getTimerConfig().getWorkDuration() : Duration.ofMinutes(25);
+        Duration remaining = totalConfig.minus(session.getWorkedDuration() != null ? session.getWorkedDuration() : Duration.ZERO);
+        if (remaining.isNegative()) {
+            remaining = Duration.ZERO;
+        }
+        session.setExpectedFinishTime(now.plus(remaining));
+        scheduler.scheduleFinish(session.getId(), session.getExpectedFinishTime(), () -> finishTimer(session.getId(), null));
         return TimerSessionMapper.toResponse(session);
     }
 
     @Transactional
-    public TimerSessionResponse finishTimer(Long sessionId) {
+    public TimerSessionResponse finishTimer(Long sessionId, Long workedSeconds) {
         Instant now = Instant.now();
         TimerSession session = timerSessionRepo.findById(sessionId)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
         session.setFinishedAt(now);
-        if (session.getStatus() == Status.RUNNING_WORK) {
+        if (workedSeconds != null) {
+            session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
+        } else if (session.getStatus() == Status.RUNNING_WORK && session.getCurrentStartTime() != null) {
             addWorkedTime(session, now);
         }
         session.setStatus(Status.FINISHED);
@@ -105,13 +117,15 @@ public class TimerSessionService {
     }
 
     @Transactional
-    public TimerSessionResponse cancelTimer(Long sessionId) {
+    public TimerSessionResponse cancelTimer(Long sessionId, Long workedSeconds) {
         Instant now = Instant.now();
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
         session.setFinishedAt(now);
-        if (session.getStatus() == Status.RUNNING_WORK) {
+        if (workedSeconds != null) {
+            session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
+        } else if (session.getStatus() == Status.RUNNING_WORK && session.getCurrentStartTime() != null) {
             addWorkedTime(session, now);
         }
         session.setStatus(Status.CANCELLED);
@@ -126,7 +140,7 @@ public class TimerSessionService {
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
         if (session.getStatus() == Status.RUNNING_WORK && Instant.now().isAfter(session.getExpectedFinishTime())) {
-            return finishTimer(session.getId());
+            return finishTimer(session.getId(), null);
         }
         return TimerSessionMapper.toResponse(session);
     }
@@ -138,7 +152,8 @@ public class TimerSessionService {
     }
 
     private static void addWorkedTime(TimerSession session, Instant now) {
+        Duration previous = session.getWorkedDuration() != null ? session.getWorkedDuration() : Duration.ZERO;
         Duration currentWork = Duration.between(session.getCurrentStartTime(), now);
-        session.setWorkedDuration(session.getWorkedDuration().plus(currentWork));
+        session.setWorkedDuration(previous.plus(currentWork));
     }
 }

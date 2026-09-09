@@ -53,7 +53,6 @@ export class ConfigComponent implements OnInit, OnDestroy {
         this.configModel.workMinutes = 25;
         this.configModel.breakMinutes = 5;
 
-        // Falls noch keine aktive Config ausgewählt war, die neue direkt aktivieren
         const savedIdStr = localStorage.getItem('selectedConfigId');
         if (!savedIdStr) {
           this.timerStateService.selectNewConfig(savedConfig);
@@ -87,17 +86,20 @@ export class ConfigComponent implements OnInit, OnDestroy {
 
     this.configService.delete(id).subscribe({
       next: () => {
-        const remaining = this.allConfigs().filter(c => c.id !== id);
-        if (wasActive) {
-          if (remaining.length > 0) {
-            this.timerStateService.selectNewConfig(remaining[0]);
-          } else {
-            localStorage.removeItem('selectedConfigId');
-            localStorage.removeItem('cachedWorkSec');
-            localStorage.removeItem('cachedBreakSec');
-            this.timerStateService.clearTimerState();
+        this.configService.loadAll().subscribe({
+          next: (updatedConfigs) => {
+            if (wasActive || !updatedConfigs.some(c => c.id === parseInt(localStorage.getItem('selectedConfigId') || '0', 10))) {
+              if (updatedConfigs.length > 0) {
+                this.timerStateService.selectNewConfig(updatedConfigs[0]);
+              } else {
+                localStorage.removeItem('selectedConfigId');
+                localStorage.removeItem('cachedWorkSec');
+                localStorage.removeItem('cachedBreakSec');
+                this.timerStateService.clearTimerState();
+              }
+            }
           }
-        }
+        });
       },
       error: (err) => alert('Löschen fehlgeschlagen.')
     });
