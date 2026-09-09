@@ -76,9 +76,33 @@ export class AuthService {
       const cachedWorkStr = typeof localStorage !== 'undefined' ? localStorage.getItem('cachedWorkSec') : null;
       const totalWork = cachedWorkStr ? parseInt(cachedWorkStr, 10) : 1500;
       const worked = Math.max(0, totalWork - remaining);
-      this.timerSessionService.cancelTimer(currentState.currentSessionId, worked).subscribe();
+
+      let finalized = false;
+      const done = () => {
+        if (!finalized) {
+          finalized = true;
+          this.finalizeLogout();
+        }
+      };
+
+      const timeoutId = setTimeout(done, 500);
+      this.timerSessionService.cancelTimer(currentState.currentSessionId, worked).subscribe({
+        next: () => {
+          clearTimeout(timeoutId);
+          done();
+        },
+        error: () => {
+          clearTimeout(timeoutId);
+          done();
+        }
+      });
+      return;
     }
 
+    this.finalizeLogout();
+  }
+
+  private finalizeLogout(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(this.TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);

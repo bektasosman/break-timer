@@ -51,9 +51,53 @@ export class TimerSessionService {
 
     return request$.pipe(
       tap(data => {
-        this.sessionsSignal.set(data || []);
+        this.mergeIncomingSessions(data || []);
       })
     );
+  }
+
+  private mergeIncomingSessions(incoming: TimerSessionResponse[]): void {
+    const current = this.sessionsSignal();
+    const currentMap = new Map<number, TimerSessionResponse>();
+    current.forEach(s => currentMap.set(s.id, s));
+
+    const merged: TimerSessionResponse[] = incoming.map(inc => {
+      const existing = currentMap.get(inc.id);
+      if (!existing) {
+        return inc;
+      }
+      currentMap.delete(inc.id);
+
+      // Falls die lokale Session bereits beendet/abgebrochen wurde, nicht wieder auf RUNNING/PAUSED zurücksetzen
+      let status = inc.status;
+      let finishedAt = inc.finishedAt;
+      if (existing.status === 'CANCELLED' || existing.status === 'FINISHED') {
+        if (inc.status === 'RUNNING_WORK' || inc.status === 'PAUSED_WORK') {
+          status = existing.status;
+          finishedAt = existing.finishedAt || inc.finishedAt || new Date().toISOString();
+        }
+      }
+
+      // Maximale gearbeitete Zeit beibehalten, damit Werte nicht durch Server-Latenz zurückspringen
+      const incSec = this.parseIsoToSeconds(inc.workedDuration);
+      const existSec = this.parseIsoToSeconds(existing.workedDuration);
+      const bestSec = Math.max(incSec, existSec);
+
+      return {
+        ...inc,
+        configName: inc.configName || existing.configName,
+        status,
+        finishedAt,
+        workedDuration: this.secondsToIso(bestSec)
+      };
+    });
+
+    // Noch nicht auf dem Server gespeicherte lokale Sessions beibehalten
+    currentMap.forEach(unsyncedLocal => {
+      merged.push(unsyncedLocal);
+    });
+
+    this.sessionsSignal.set(merged);
   }
 
   getSession(sessionId: number): Observable<TimerSessionResponse | null> {
@@ -255,10 +299,13 @@ export class TimerSessionService {
   ): void {
     const list = this.sessionsSignal().map(s => {
       if (s.id === sessionId) {
+        const bestWorked = workedSeconds !== undefined 
+          ? this.secondsToIso(Math.max(this.parseIsoToSeconds(s.workedDuration), workedSeconds))
+          : s.workedDuration;
         return {
           ...s,
           status,
-          workedDuration: workedSeconds !== undefined ? this.secondsToIso(Math.max(0, workedSeconds)) : s.workedDuration,
+          workedDuration: bestWorked,
           finishedAt: (status === 'FINISHED' || status === 'CANCELLED') ? new Date().toISOString() : s.finishedAt
         };
       }
@@ -286,7 +333,20 @@ export class TimerSessionService {
   }
 
   private updateSessionInSignal(updated: TimerSessionResponse): void {
-    const list = this.sessionsSignal().map(s => s.id === updated.id ? updated : s);
+    const list = this.sessionsSignal().map(s => {
+      if (s.id === updated.id) {
+        const secLocal = this.parseIsoToSeconds(s.workedDuration);
+        const secUp = this.parseIsoToSeconds(updated.workedDuration);
+        const maxSec = Math.max(secLocal, secUp);
+        return {
+          ...updated,
+          configName: updated.configName || s.configName,
+          status: (s.status === 'CANCELLED' || s.status === 'FINISHED') ? s.status : updated.status,
+          workedDuration: this.secondsToIso(maxSec)
+        };
+      }
+      return s;
+    });
     this.sessionsSignal.set(list);
   }
 

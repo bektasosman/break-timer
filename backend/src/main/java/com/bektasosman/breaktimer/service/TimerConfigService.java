@@ -1,5 +1,6 @@
 package com.bektasosman.breaktimer.service;
 
+import com.bektasosman.breaktimer.Session.Status;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.mapper.TimerConfigMapper;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -55,12 +57,16 @@ public class TimerConfigService {
         TimerConfig config = timerConfigRepo.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(id));
 
-        // Preserve configName in all sessions before deleting config
+        // Preserve configName in all sessions and cancel any active/running/paused sessions of this config
         List<TimerSession> sessions = timerSessionRepo.findByUser(currentUser);
         for (TimerSession s : sessions) {
             if (s.getTimerConfig() != null && s.getTimerConfig().getId().equals(config.getId())) {
                 if (s.getConfigName() == null || s.getConfigName().isBlank()) {
                     s.setConfigName(config.getName());
+                }
+                if (s.getStatus() == Status.RUNNING_WORK || s.getStatus() == Status.PAUSED_WORK) {
+                    s.setStatus(Status.CANCELLED);
+                    s.setFinishedAt(Instant.now());
                 }
                 s.setTimerConfig(null);
                 timerSessionRepo.save(s);

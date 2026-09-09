@@ -81,7 +81,11 @@ export class ConfigComponent implements OnInit, OnDestroy {
     const currentState = this.timerStateService.getTimerState();
 
     if (wasActive && currentState?.currentSessionId) {
-      this.sessionService.cancelTimer(currentState.currentSessionId).subscribe();
+      const remaining = currentState.remainingSeconds || 0;
+      const cachedWorkStr = localStorage.getItem('cachedWorkSec');
+      const totalWork = cachedWorkStr ? parseInt(cachedWorkStr, 10) : 1500;
+      const worked = Math.max(0, totalWork - remaining);
+      this.sessionService.cancelTimer(currentState.currentSessionId, worked).subscribe();
     }
 
     this.configService.delete(id).subscribe({
