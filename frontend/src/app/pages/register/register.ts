@@ -1,17 +1,17 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './register.html',
   styleUrl: './register.css'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
@@ -20,31 +20,38 @@ export class RegisterComponent {
   password = '';
   confirmPassword = '';
 
+  errorMessage = signal<string | null>(null);
+  isLoading = signal<boolean>(false);
+
   ngOnInit(): void {
     const body = this.document.body;
-    body.classList.remove('bg-config', 'bg-work', 'bg-break', 'bg-login');
+    body.classList.remove('bg-config', 'bg-work', 'bg-break', 'bg-login', 'bg-stats');
     body.classList.add('bg-register');
   }
 
-
   onRegister(): void {
+    if (this.isLoading()) return;
+
     if (this.password !== this.confirmPassword) {
-      alert('Die Passwörter stimmen nicht überein!');
+      this.errorMessage.set('Die Passwörter stimmen nicht überein!');
       return;
     }
 
-    // 🟢 email wird jetzt mit an den AuthService übergeben:
+    this.errorMessage.set(null);
+    this.isLoading.set(true);
+
     this.authService.register({
       email: this.email,
       password: this.password
     }).subscribe({
       next: () => {
-        alert('Konto erfolgreich erstellt!');
+        this.isLoading.set(false);
         this.router.navigate(['/login']);
       },
       error: (err) => {
+        this.isLoading.set(false);
         console.error('Registrierung Fehler:', err);
-        alert('Registrierung fehlgeschlagen!');
+        this.errorMessage.set('Registrierung fehlgeschlagen! Bitte überprüfe deine Angaben.');
       }
     });
   }

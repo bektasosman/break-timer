@@ -1,10 +1,15 @@
 <div class="login-container">
   <div class="login-card">
+    @if (isLoading()) {
+      <div class="progress-bar-container">
+        <div class="progress-bar-indeterminate"></div>
+      </div>
+    }
+
     <h2>Konto erstellen</h2>
     <p class="login-subtitle">Erstelle ein Konto, um deine Timer zu speichern.</p>
 
     <form (ngSubmit)="onRegister()">
-    
       <div class="input-group">
         <label for="email">E-Mail-Adresse</label>
         <input 
@@ -13,6 +18,7 @@
           [(ngModel)]="email" 
           name="email" 
           placeholder="name@beispiel.de" 
+          [disabled]="isLoading()"
           required 
         />
       </div>
@@ -25,6 +31,7 @@
           [(ngModel)]="password" 
           name="password" 
           placeholder="••••••••" 
+          [disabled]="isLoading()"
           required 
         />
       </div>
@@ -37,11 +44,25 @@
           [(ngModel)]="confirmPassword" 
           name="confirmPassword" 
           placeholder="••••••••" 
+          [disabled]="isLoading()"
           required 
         />
       </div>
 
-      <button type="submit" class="btn-primary">Registrieren</button>
+      @if (errorMessage()) {
+        <div class="error-msg">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner"></span>
+          <span>Wird erstellt...</span>
+        } @else {
+          <span>Registrieren</span>
+        }
+      </button>
     </form>
 
     <div class="login-footer">

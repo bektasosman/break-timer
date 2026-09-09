@@ -1,5 +1,11 @@
 <div class="login-container">
   <div class="login-card">
+    @if (isLoading()) {
+      <div class="progress-bar-container">
+        <div class="progress-bar-indeterminate"></div>
+      </div>
+    }
+
     <h2>Willkommen zurück</h2>
     <p class="login-subtitle">Bitte melde dich an, um fortzufahren.</p>
 
@@ -12,6 +18,7 @@
           [(ngModel)]="email" 
           name="email" 
           placeholder="deine@email.de" 
+          [disabled]="isLoading()"
           required 
         />
       </div>
@@ -24,6 +31,7 @@
           [(ngModel)]="password" 
           name="password" 
           placeholder="••••••••" 
+          [disabled]="isLoading()"
           required 
         />
       </div>
@@ -34,7 +42,14 @@
         </div>
       }
 
-      <button type="submit" class="btn-primary">Einloggen</button>
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner"></span>
+          <span>Wird eingeloggt...</span>
+        } @else {
+          <span>Einloggen</span>
+        }
+      </button>
     </form>
 
     <div class="login-footer">

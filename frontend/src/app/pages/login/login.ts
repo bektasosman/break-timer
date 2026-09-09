@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -12,32 +12,37 @@ import { DOCUMENT } from '@angular/common';
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private document = inject(DOCUMENT);
-
-  ngOnInit(): void {
-     const body = this.document.body;
-    body.classList.remove('bg-config', 'bg-work', 'bg-break', 'bg-register');
-    body.classList.add('bg-login');
-  }
 
   email = '';
   password = '';
 
   errorMessage = signal<string | null>(null);
+  isLoading = signal<boolean>(false);
+
+  ngOnInit(): void {
+    const body = this.document.body;
+    body.classList.remove('bg-config', 'bg-work', 'bg-break', 'bg-register', 'bg-stats');
+    body.classList.add('bg-login');
+  }
 
   onLogin(): void {
+    if (this.isLoading()) return;
+
     this.errorMessage.set(null);
+    this.isLoading.set(true);
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: () => {
+        this.isLoading.set(false);
         this.router.navigate(['/timer']);
       },
       error: (err) => {
+        this.isLoading.set(false);
         console.error('Login Fehler:', err);
-        // 🟢 Das Signal wird bei falschem Passwort gesetzt:
         this.errorMessage.set('Email oder Passwort ist falsch.');
       }
     });
