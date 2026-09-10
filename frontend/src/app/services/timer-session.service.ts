@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+﻿import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -316,9 +316,11 @@ export class TimerSessionService {
 
   clearAllSessions(): Observable<void> {
     if (this.isLoggedIn()) {
-      return this.http.delete<void>(this.apiUrl).pipe(
+        const observable = this.http.delete<void>(this.apiUrl).pipe(
         tap(() => this.sessionsSignal.set([]))
       );
+      this.sessionsSignal.set([]);
+      return observable;
     }
 
     this.clearGuestSessions();
