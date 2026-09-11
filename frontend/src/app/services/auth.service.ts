@@ -72,29 +72,18 @@ export class AuthService {
   logout(): void {
     const currentState = this.timerStateService.getTimerState();
     if (currentState?.currentSessionId) {
+
       const remaining = currentState.remainingSeconds || 0;
       const cachedWorkStr = typeof localStorage !== 'undefined' ? localStorage.getItem('cachedWorkSec') : null;
       const totalWork = cachedWorkStr ? parseInt(cachedWorkStr, 10) : 1500;
       const worked = Math.max(0, totalWork - remaining);
+      // 1. Zustand sofort im Speicher clearen, damit ngOnDestroy gar nichts mehr sendet!
+      this.timerStateService.clearTimerState();
 
-      let finalized = false;
-      const done = () => {
-        if (!finalized) {
-          finalized = true;
-          this.finalizeLogout();
-        }
-      };
-
-      const timeoutId = setTimeout(done, 500);
-      this.timerSessionService.cancelTimer(currentState.currentSessionId, worked).subscribe({
-        next: () => {
-          clearTimeout(timeoutId);
-          done();
-        },
-        error: () => {
-          clearTimeout(timeoutId);
-          done();
-        }
+      // 2. Cancel an Backend senden
+      this.timerSessionService.cancelTimer(currentState?.currentSessionId, worked).subscribe({
+        next: () => this.finalizeLogout(),
+        error: () => this.finalizeLogout()
       });
       return;
     }

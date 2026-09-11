@@ -292,7 +292,7 @@ export class TimerSessionService {
     return session!;
   }
 
-  private optimisticUpdate(
+  public optimisticUpdate(
     sessionId: number, 
     status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'FINISHED' | 'CANCELLED',
     workedSeconds?: number
