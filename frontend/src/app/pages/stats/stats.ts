@@ -3,6 +3,7 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService, TimerSessionResponse } from '../../services/timer-session.service';
 import { AuthService } from '../../services/auth.service';
+import { TimerStateService } from '../../services/timer-state.service';
 
 export interface DayChartItem {
   dayLabel: string;
@@ -33,6 +34,7 @@ export interface SessionHistoryItem {
 })
 export class StatsComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
+  private timerStateService = inject(TimerStateService);
   public authService = inject(AuthService);
   private document = inject(DOCUMENT);
 
@@ -179,6 +181,7 @@ export class StatsComponent implements OnInit, OnDestroy {
         console.error('Fehler beim Löschen des Verlaufs:', err);
       }
     });
+    this.timerStateService.clearTimerState();
   }
 
   protected formatSeconds(totalSeconds: number): string {
