@@ -3,7 +3,6 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TimerSessionService, TimerSessionResponse } from '../../services/timer-session.service';
 import { AuthService } from '../../services/auth.service';
-import { TimerStateService } from '../../services/timer-state.service';
 
 export interface DayChartItem {
   dayLabel: string;
@@ -34,7 +33,6 @@ export interface SessionHistoryItem {
 })
 export class StatsComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
-  private timerStateService = inject(TimerStateService);
   public authService = inject(AuthService);
   private document = inject(DOCUMENT);
 
@@ -102,7 +100,9 @@ export class StatsComponent implements OnInit, OnDestroy {
 
       totalSeconds += workedSec;
 
-      const sessionDate = s.finishedAt ? new Date(s.finishedAt) : (s.currentStartTime ? new Date(s.currentStartTime) : new Date(s.id));
+      // Priorität für das Datum: startedAt -> currentStartTime -> finishedAt -> id
+      const dateRaw = s.startedAt || s.currentStartTime || s.finishedAt || (typeof s.id === 'number' && s.id > 1000000000000 ? s.id : null);
+      const sessionDate = dateRaw ? new Date(dateRaw) : new Date();
       const sessionTimestamp = sessionDate.getTime();
 
       if (sessionDate >= todayStart) {
@@ -127,7 +127,6 @@ export class StatsComponent implements OnInit, OnDestroy {
         statusLabel = 'Abgebrochen';
         statusClass = 'cancelled';
       } else {
-        // Beim Betrachten der Stats ist die Session immer pausiert
         statusLabel = 'Pausiert';
         statusClass = 'paused';
       }
@@ -181,7 +180,6 @@ export class StatsComponent implements OnInit, OnDestroy {
         console.error('Fehler beim Löschen des Verlaufs:', err);
       }
     });
-    this.timerStateService.clearTimerState();
   }
 
   protected formatSeconds(totalSeconds: number): string {

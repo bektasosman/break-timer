@@ -1,4 +1,4 @@
-﻿import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, catchError } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -7,6 +7,7 @@ export interface TimerSessionResponse {
   id: number;
   timerConfig: TimerConfigResponse | null;
   configName?: string | null;
+  startedAt?: string | null;
   currentStartTime: string | null;
   workedDuration: string;
   finishedAt: string | null;
@@ -68,7 +69,6 @@ export class TimerSessionService {
       }
       currentMap.delete(inc.id);
 
-      // Falls die lokale Session bereits beendet/abgebrochen wurde, nicht wieder auf RUNNING/PAUSED zurücksetzen
       let status = inc.status;
       let finishedAt = inc.finishedAt;
       if (existing.status === 'CANCELLED' || existing.status === 'FINISHED') {
@@ -78,7 +78,6 @@ export class TimerSessionService {
         }
       }
 
-      // Maximale gearbeitete Zeit beibehalten, damit Werte nicht durch Server-Latenz zurückspringen
       const incSec = this.parseIsoToSeconds(inc.workedDuration);
       const existSec = this.parseIsoToSeconds(existing.workedDuration);
       const bestSec = Math.max(incSec, existSec);
@@ -86,13 +85,13 @@ export class TimerSessionService {
       return {
         ...inc,
         configName: inc.configName || existing.configName,
+        startedAt: inc.startedAt || existing.startedAt || inc.currentStartTime || existing.currentStartTime,
         status,
         finishedAt,
         workedDuration: this.secondsToIso(bestSec)
       };
     });
 
-    // Noch nicht auf dem Server gespeicherte lokale Sessions beibehalten
     currentMap.forEach(unsyncedLocal => {
       merged.push(unsyncedLocal);
     });
@@ -139,20 +138,17 @@ export class TimerSessionService {
     const guestConfigs = this.getGuestConfigsFromStorage();
     const selectedConfig = guestConfigs.find(c => c.id === configId) || (guestConfigs.length > 0 ? guestConfigs[0] : null);
 
-    const workDurationStr = selectedConfig ? selectedConfig.workDuration : 'PT25M';
-    const workSeconds = this.parseIsoToSeconds(workDurationStr);
-
     const now = new Date();
-    const expectedFinish = new Date(now.getTime() + workSeconds * 1000);
 
     const newSession: TimerSessionResponse = {
       id: Date.now(),
       timerConfig: selectedConfig,
       configName: selectedConfig ? selectedConfig.name : 'Standard Pomodoro',
+      startedAt: now.toISOString(),
+      currentStartTime: now.toISOString(),
       status: 'RUNNING_WORK',
       workedDuration: 'PT0S',
-      currentStartTime: now.toISOString(),
-      finishedAt: expectedFinish.toISOString()
+      finishedAt: null
     };
 
     const sessions = this.getGuestSessions();
@@ -292,7 +288,7 @@ export class TimerSessionService {
     return session!;
   }
 
-  public optimisticUpdate(
+  private optimisticUpdate(
     sessionId: number, 
     status: 'RUNNING_WORK' | 'PAUSED_WORK' | 'RUNNING_BREAK' | 'FINISHED' | 'CANCELLED',
     workedSeconds?: number
@@ -306,7 +302,7 @@ export class TimerSessionService {
           ...s,
           status,
           workedDuration: bestWorked,
-          finishedAt: (status === 'FINISHED' || status === 'CANCELLED') ? new Date().toISOString() : s.finishedAt
+          finishedAt: (status === 'FINISHED' || status === 'CANCELLED') ? (s.finishedAt || new Date().toISOString()) : s.finishedAt
         };
       }
       return s;
@@ -316,11 +312,9 @@ export class TimerSessionService {
 
   clearAllSessions(): Observable<void> {
     if (this.isLoggedIn()) {
-        const observable = this.http.delete<void>(this.apiUrl).pipe(
+      return this.http.delete<void>(this.apiUrl).pipe(
         tap(() => this.sessionsSignal.set([]))
       );
-      this.sessionsSignal.set([]);
-      return observable;
     }
 
     this.clearGuestSessions();
@@ -343,6 +337,7 @@ export class TimerSessionService {
         return {
           ...updated,
           configName: updated.configName || s.configName,
+          startedAt: updated.startedAt || s.startedAt || updated.currentStartTime || s.currentStartTime,
           status: (s.status === 'CANCELLED' || s.status === 'FINISHED') ? s.status : updated.status,
           workedDuration: this.secondsToIso(maxSec)
         };

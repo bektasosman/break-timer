@@ -32,10 +32,22 @@ public class TimerSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "created_at")
+    private Instant createdAt;
+
     private Instant currentStartTime;
     private Duration workedDuration;
     private Instant finishedAt;
+
+    @Enumerated(EnumType.STRING)
     private Status status;
+
     private Instant expectedFinishTime;
 
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+    }
 }

@@ -10,11 +10,33 @@ public record TimerSessionResponse(
         Long id,
         TimerConfigResponse timerConfig,
         String configName,
+        Instant startedAt,
         Instant currentStartTime,
         Duration workedDuration,
         Instant finishedAt,
         Status status
 ) {
+    public TimerSessionResponse(
+            Long id,
+            TimerConfigResponse timerConfig,
+            String configName,
+            Instant currentStartTime,
+            Duration workedDuration,
+            Instant finishedAt,
+            Status status
+    ) {
+        this(
+                id,
+                timerConfig,
+                configName,
+                currentStartTime,
+                currentStartTime,
+                workedDuration,
+                finishedAt,
+                status
+        );
+    }
+
     public TimerSessionResponse(
             Long id,
             TimerConfigResponse timerConfig,
@@ -27,6 +49,7 @@ public record TimerSessionResponse(
                 id,
                 timerConfig,
                 timerConfig != null ? timerConfig.name() : null,
+                currentStartTime,
                 currentStartTime,
                 workedDuration,
                 finishedAt,

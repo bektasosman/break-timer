@@ -4,6 +4,7 @@ import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.entities.TimerSession;
 
 import java.time.Duration;
+import java.time.Instant;
 
 public final class TimerSessionMapper {
 
@@ -26,10 +27,15 @@ public final class TimerSessionMapper {
             name = "Pomodoro Session";
         }
 
+        Instant startedAt = session.getCreatedAt() != null 
+                ? session.getCreatedAt() 
+                : (session.getCurrentStartTime() != null ? session.getCurrentStartTime() : Instant.now());
+
         return new TimerSessionResponse(
                 session.getId(),
                 TimerConfigMapper.toResponse(session.getTimerConfig()),
                 name,
+                startedAt,
                 session.getCurrentStartTime(),
                 worked,
                 session.getFinishedAt(),

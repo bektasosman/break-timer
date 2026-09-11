@@ -38,6 +38,7 @@ public class TimerSessionService {
         session.setUser(currentUser);
         session.setTimerConfig(timerConfig);
         session.setConfigName(timerConfig.getName());
+        session.setCreatedAt(now);
         session.setCurrentStartTime(now);
         session.setWorkedDuration(Duration.ZERO);
         session.setFinishedAt(null);
@@ -59,6 +60,12 @@ public class TimerSessionService {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
+
+        // Abgebrochene oder beendete Sessions nicht wieder auf PAUSED zurücksetzen
+        if (session.getStatus() == Status.CANCELLED || session.getStatus() == Status.FINISHED) {
+            return TimerSessionMapper.toResponse(session);
+        }
+
         session.setStatus(Status.PAUSED_WORK);
         if (workedSeconds != null) {
             session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
@@ -91,6 +98,11 @@ public class TimerSessionService {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
+
+        if (session.getStatus() == Status.CANCELLED || session.getStatus() == Status.FINISHED) {
+            return TimerSessionMapper.toResponse(session);
+        }
+
         Instant now = Instant.now();
         session.setStatus(Status.RUNNING_WORK);
         session.setCurrentStartTime(now);
@@ -114,6 +126,11 @@ public class TimerSessionService {
         Instant now = Instant.now();
         TimerSession session = timerSessionRepo.findById(sessionId)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
+
+        if (session.getStatus() == Status.CANCELLED) {
+            return TimerSessionMapper.toResponse(session);
+        }
+
         session.setFinishedAt(now);
         if (workedSeconds != null) {
             session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
@@ -137,6 +154,11 @@ public class TimerSessionService {
         User currentUser = currentUserService.getCurrentUser();
         TimerSession session = timerSessionRepo.findByIdAndUser(sessionId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(sessionId));
+
+        if (session.getStatus() == Status.FINISHED) {
+            return TimerSessionMapper.toResponse(session);
+        }
+
         session.setFinishedAt(now);
         if (workedSeconds != null) {
             session.setWorkedDuration(Duration.ofSeconds(Math.max(0, workedSeconds)));
