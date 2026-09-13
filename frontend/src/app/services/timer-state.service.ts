@@ -53,8 +53,25 @@ export class TimerStateService {
     return this.state();
   }
 
-  public clearTimerState(): void {
-    this.state.set(null);
+  public clearTimerState(activeConfig?: TimerConfigResponse | null): void {
+    
+    if (activeConfig) {
+    // Wenn wir eine Config haben: Einfach auf deren Startzustand (z.B. 25:00 IDLE) zurücksetzen!
+    this.selectNewConfig(activeConfig);
+  } else {
+    // Fallback falls gar keine Config übergeben wurde:
+    // Auf Standard (25 Minuten Pomodoro) setzen statt 'null'
+    const defaultWorkSec = 25 * 60;
+    const defaultState: SavedTimerState = {
+      status: 'IDLE',
+      activeTab: 'work',
+      remainingSeconds: defaultWorkSec,
+      currentSessionId: null,
+      activeConfigId: null,
+      displayTime: '25:00'
+    };
+    this.saveTimerState(defaultState);
+  }
     if (this.isBrowser()) {
       localStorage.removeItem(this.STORAGE_KEY);
       localStorage.removeItem('selectedConfigId');

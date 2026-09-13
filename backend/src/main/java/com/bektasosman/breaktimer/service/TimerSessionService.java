@@ -29,16 +29,16 @@ public class TimerSessionService {
 
     @Transactional
     public TimerSessionResponse startTimer(Long timerConfigId) {
+        Instant now = Instant.now();
         User currentUser = currentUserService.getCurrentUser();
         TimerConfig timerConfig = timerConfigRepo.findByIdAndUser(timerConfigId, currentUser)
                 .orElseThrow(() -> new TimerNotFoundException(timerConfigId));
         TimerSession session = new TimerSession();
-        Instant now = Instant.now();
         Instant expectedFinishTime = Instant.now().plus(timerConfig.getWorkDuration());
         session.setUser(currentUser);
         session.setTimerConfig(timerConfig);
         session.setConfigName(timerConfig.getName());
-        session.setCreatedAt(now);
+        session.setStartedAt(now);
         session.setCurrentStartTime(now);
         session.setWorkedDuration(Duration.ZERO);
         session.setFinishedAt(null);

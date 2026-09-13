@@ -32,8 +32,8 @@ public class TimerSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "created_at")
-    private Instant createdAt;
+    @Column(name = "started_At")
+    private Instant startedAt;
 
     private Instant currentStartTime;
     private Duration workedDuration;
@@ -44,10 +44,4 @@ public class TimerSession {
 
     private Instant expectedFinishTime;
 
-    @PrePersist
-    public void prePersist() {
-        if (this.createdAt == null) {
-            this.createdAt = Instant.now();
-        }
-    }
 }
