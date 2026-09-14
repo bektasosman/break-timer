@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -68,8 +69,9 @@ class AuthServiceTest {
                 .password("pass123")
                 .authorities("ROLE_USER")
                 .build();
-
-        when(userDetailsService.loadUserByUsername("test@example.com")).thenReturn(mockUserDetails);
+        Authentication mockAuthentication = mock(Authentication.class);
+        when(mockAuthentication.getPrincipal()).thenReturn(mockUserDetails);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(mockAuthentication);
         when(jwtService.generateToken(mockUserDetails)).thenReturn("mock-token-xyz");
 
         AuthResponse response = authService.login(request);
