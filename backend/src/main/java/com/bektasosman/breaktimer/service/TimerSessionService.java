@@ -2,11 +2,13 @@ package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.Schedule.TimerScheduler;
 import com.bektasosman.breaktimer.Session.Status;
+import com.bektasosman.breaktimer.dto.event.TimerSessionEvent;
 import com.bektasosman.breaktimer.dto.session.TimerSessionResponse;
 import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
+import com.bektasosman.breaktimer.kafka.TimerEventProducer;
 import com.bektasosman.breaktimer.mapper.TimerSessionMapper;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
 import com.bektasosman.breaktimer.repository.TimerSessionRepository;
@@ -26,6 +28,7 @@ public class TimerSessionService {
     private final TimerConfigRepository timerConfigRepo;
     private final TimerScheduler scheduler;
     private final CurrentUserService currentUserService;
+    private final TimerEventProducer timerEventProducer;
 
     @Transactional
     public TimerSessionResponse startTimer(Long timerConfigId) {
@@ -140,6 +143,7 @@ public class TimerSessionService {
         session.setStatus(Status.FINISHED);
         TimerSession saved = timerSessionRepo.save(session);
         scheduler.cancelFinish(saved.getId());
+        publishSessionEvent(saved);
         return TimerSessionMapper.toResponse(saved);
     }
 
@@ -168,6 +172,7 @@ public class TimerSessionService {
         session.setStatus(Status.CANCELLED);
         TimerSession saved = timerSessionRepo.save(session);
         scheduler.cancelFinish(saved.getId());
+        publishSessionEvent(saved);
         return TimerSessionMapper.toResponse(saved);
     }
 
@@ -186,6 +191,33 @@ public class TimerSessionService {
     public void deleteAllTimerSessions() {
         User currentUser = currentUserService.getCurrentUser();
         timerSessionRepo.deleteByUser(currentUser);
+    }
+
+    private void publishSessionEvent(TimerSession session) {
+        long workMinutes = session.getTimerConfig() != null
+                ? session.getTimerConfig().getWorkDuration().toMinutes()
+                : (session.getWorkedDuration() != null ? session.getWorkedDuration().toMinutes() : 25);
+
+        long breakMinutes = session.getTimerConfig() != null
+                ? session.getTimerConfig().getBreakDuration().toMinutes()
+                : 5;
+
+        long workedSeconds = session.getWorkedDuration() != null
+                ? session.getWorkedDuration().toSeconds()
+                : 0;
+
+        TimerSessionEvent event = new TimerSessionEvent(
+                session.getUser().getId(),
+                session.getConfigName(),
+                workMinutes,
+                breakMinutes,
+                workedSeconds,
+                session.getStartedAt(),
+                session.getFinishedAt(),
+                session.getStatus()
+        );
+
+        timerEventProducer.sendTimerEvent(event);
     }
 
     private static void addWorkedTime(TimerSession session, Instant now) {
