@@ -7,6 +7,7 @@ import com.bektasosman.breaktimer.entities.TimerConfig;
 import com.bektasosman.breaktimer.entities.TimerSession;
 import com.bektasosman.breaktimer.entities.User;
 import com.bektasosman.breaktimer.exception.TimerNotFoundException;
+import com.bektasosman.breaktimer.kafka.TimerEventProducer;
 import com.bektasosman.breaktimer.repository.TimerConfigRepository;
 import com.bektasosman.breaktimer.repository.TimerSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,9 @@ class TimerSessionServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private TimerEventProducer timerEventProducer;
 
     @InjectMocks
     private TimerSessionService timerSessionService;
@@ -218,6 +222,7 @@ class TimerSessionServiceTest {
             // 5 Min + 5 Min = ca. 10 Min (600s)
             assertTrue(totalWorked >= 599 && totalWorked <= 602,
                     "Gesamte Arbeitszeit sollte ca. 600 Sekunden sein, war aber: " + totalWorked);
+            verify(timerEventProducer).sendTimerEvent(any());
         }
 
         @Test
@@ -236,6 +241,7 @@ class TimerSessionServiceTest {
             assertEquals(Status.FINISHED, sampleSession.getStatus());
             assertEquals(Duration.ofMinutes(12), sampleSession.getWorkedDuration(),
                     "Pausierter Timer darf beim Beenden keine Zeit mehr hinzurechnen");
+            verify(timerEventProducer).sendTimerEvent(any());
         }
     }
 }
