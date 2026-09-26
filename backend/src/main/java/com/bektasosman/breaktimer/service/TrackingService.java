@@ -3,6 +3,7 @@ package com.bektasosman.breaktimer.service;
 import com.bektasosman.breaktimer.Session.Status;
 import com.bektasosman.breaktimer.dto.event.TimerSessionEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class TrackingService {
 
     // Helper Record für Config-Zähler
