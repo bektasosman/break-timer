@@ -2,6 +2,7 @@ package com.bektasosman.breaktimer.service;
 
 import com.bektasosman.breaktimer.Session.Status;
 import com.bektasosman.breaktimer.dto.event.TimerSessionEvent;
+import com.bektasosman.breaktimer.dto.tracking.TrackingStatsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -88,6 +89,24 @@ public class TrackingService {
 
         log.info("Tracking aktualisiert | Gesamt-Abbruchquote: {}% | Höchste Abbruch-Config: {}",
                 String.format("%.1f", getOverallCancellationRate()), getMostCancelledConfig());
+    }
+
+    // --- Aggregiertes TrackingStatsResponse DTO für API ---
+
+    public TrackingStatsResponse getAggregatedStats() {
+        return new TrackingStatsResponse(
+                getTotalEventsCount(),
+                getTotalWorkedSecondsAllUsers(),
+                getTotalFinishedTimers(),
+                getTotalCancelledTimers(),
+                Math.round(getOverallCancellationRate() * 10.0) / 10.0,
+                getPeakStartHourFormatted(),
+                getMostCancelledConfig(),
+                getPopularConfigStats(),
+                getConfigCancellationRates(),
+                getHourlyStartDistribution(),
+                getHourlyCancellationRates()
+        );
     }
 
     // --- Abfragemethoden für Controller / Analytics API ---
