@@ -1,4 +1,4 @@
-/* WENN DER BODY ROT IST (WORK) */
+﻿/* WENN DER BODY ROT IST (WORK) */
 :host-context(body.bg-work) .timer-card {
   background-color: rgba(255, 255, 255, 0.22) !important;
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
@@ -15,28 +15,41 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
-  padding: 28px 24px;
+  padding: 20px 22px 26px;
   max-width: 440px;
   width: 90%;
-  margin: 40px auto; 
+  margin: 30px auto; 
   font-family: system-ui, -apple-system, sans-serif;
   text-align: center;
   color: #ffffff !important; 
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15);
-  position: relative;
+  display: flex;
+  flex-direction: column;
   transition: background-color 0.4s ease, border-color 0.4s ease, transform 0.2s ease;
   box-sizing: border-box;
 }
 
-/* Quick-Actions oben rechts (Modern Glassmorphic Buttons) */
-.timer-card-icons {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: flex;
+/* Obere Kopfzeile: 3-Spalten Layout (Links: Config, Mitte: Tabs zentriert, Rechts: Stats & Community) */
+.timer-card-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  margin-bottom: 14px;
   gap: 8px;
-  z-index: 10;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
 }
 
 .icon-action-btn {
@@ -44,8 +57,8 @@
   border: 1px solid rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   display: inline-flex;
   align-items: center;
@@ -55,10 +68,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .icon-action-btn .btn-icon {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   line-height: 1;
   display: inline-block;
   transition: transform 0.25s ease;
@@ -80,26 +94,26 @@
   box-shadow: none;
 }
 
-/* Tab-Design */
+/* Tab-Design (Work / Break) perfekt zentriert */
 .timer-tabs {
-  display: flex;
+  display: inline-flex;
   justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 8px;
 }
 
 .timer-tabs button {
   background-color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.1);
   color: #333333;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  padding: 8px 20px;
+  padding: 7px 16px;
   border-radius: 10px;
   transition: all 0.2s ease;
-  min-height: 40px;
+  min-height: 36px;
+  white-space: nowrap;
 }
 
 .timer-tabs button.active {
@@ -112,7 +126,7 @@
 /* Zeitanzeige responsiv und tiefschwarz */
 .timer-display .time {
   font-size: clamp(3.6rem, 16vw, 5.5rem); 
-  margin: 12px 0 16px 0;
+  margin: 10px 0 16px 0;
   font-weight: 800;
   color: #000000 !important; 
   letter-spacing: -2px;
@@ -125,7 +139,7 @@
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .btn {
@@ -170,19 +184,35 @@
 
 @media (max-width: 480px) {
   .timer-card {
-    padding: 22px 16px;
-    margin: 20px auto;
-    width: 92%;
+    padding: 16px 12px 22px;
+    margin: 16px auto;
+    width: 95%;
   }
 
-  .timer-card-icons {
-    top: 14px;
-    right: 14px;
-    gap: 6px;
+  .timer-card-header {
+    gap: 4px;
+  }
+
+  .timer-tabs button {
+    padding: 6px 10px;
+    font-size: 0.85rem;
   }
 
   .icon-action-btn {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
+
+  .icon-action-btn .btn-icon {
+    font-size: 0.95rem;
+  }
+}
+
+.gear-btn .btn-icon {
+  /* Nur ein feines, dezentes Abdunkeln für bessere Lesbarkeit auf Hellrot */
+  filter: brightness(0.5) contrast(1.15);
+}
+
+.gear-btn:hover .btn-icon {
+  filter: brightness(0.6) contrast(1.2);
 }

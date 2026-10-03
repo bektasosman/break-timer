@@ -1,0 +1,151 @@
+<div class="stats-container">
+  <div class="stats-card">
+
+    <div class="stats-header">
+      <div class="header-titles">
+        <h2>🌍 Community Insights</h2>
+        <p>Echtzeit-Trends & anonyme Event-Streams der Community</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-seed" (click)="onSeedSampleData()" [disabled]="isSeeding()" title="Beispieldaten generieren">
+          {{ isSeeding() ? '⚡ Generiere...' : '✨ Beispieldaten' }}
+        </button>
+        <button type="button" class="btn-back-header" routerLink="/timer" title="Zurück zum Timer">
+          ← Zurück
+        </button>
+      </div>
+    </div>
+
+    @if (isCommunityLoading()) {
+      <p class="empty-hint">Lade weltweite Tracking-Daten...</p>
+    } @else if (communityStats(); as stats) {
+
+      @if (stats.totalEventsCount === 0) {
+        <div class="empty-history">
+          <p>Noch keine weltweiten Events im Speicher.</p>
+          <button type="button" class="btn-seed-main" (click)="onSeedSampleData()" [disabled]="isSeeding()">
+            ✨ Jetzt Beispieldaten laden
+          </button>
+        </div>
+      } @else {
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-icon">⏰</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Top Startzeit</span>
+              <span class="kpi-value">{{ stats.peakStartHourFormatted }}</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-icon">📉</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Abbruchquote</span>
+              <span class="kpi-value">{{ stats.overallCancellationRate }}%</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-icon">⚡</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Abgeschlossen</span>
+              <span class="kpi-value">{{ stats.totalFinishedTimers }}</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-icon">🌐</span>
+            <div class="kpi-info">
+              <span class="kpi-label">Fokuszeit Gesamt</span>
+              <span class="kpi-value">{{ formatSecondsCompact(stats.totalWorkedSecondsAllUsers) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="community-section">
+          <div class="section-title-row">
+            <h3>Beliebteste Timer-Modi</h3>
+            <span class="chart-subtitle">Nutzung & Abbruchquote</span>
+          </div>
+
+          <div class="config-rank-list">
+            @if (popularConfigsList().length === 0) {
+              <div class="empty-history">
+                <p>Noch keine Timer-Events verzeichnet.</p>
+              </div>
+            } @else {
+              @for (cfg of popularConfigsList(); track cfg.name) {
+                <div class="config-rank-card">
+                  <div class="config-rank-header">
+                    <span class="config-rank-name">{{ cfg.name }}</span>
+                    <span class="config-rank-count">{{ cfg.count }}x genutzt</span>
+                  </div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar-fill" [style.width.%]="cfg.percentage"></div>
+                  </div>
+                  <div class="config-rank-footer">
+                    <span class="cancel-rate-badge" [class.warning]="cfg.cancellationRate > 30">
+                      Abbruchquote: {{ cfg.cancellationRate }}%
+                    </span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="section-title-row">
+            <div class="chart-title-left">
+              <h3>Aktivität nach Tageszeit</h3>
+              <span class="chart-subtitle">Starts im 24h-Verlauf</span>
+            </div>
+            @if (hoveredHour(); as h) {
+              <div class="hover-info-badge">
+                <strong>{{ h.hourLabel }} - {{ h.hour + 1 }}:00</strong>: {{ h.count }} {{ h.count === 1 ? 'Start' : 'Starts' }}
+              </div>
+            }
+          </div>
+
+          <div class="chart-card-wrapper">
+            <div class="chart-bars-24h">
+              @for (h of hourlyDistributionList(); track h.hour) {
+                <div class="bar-col" 
+                     [class.has-starts]="h.count > 0" 
+                     [class.is-hovered]="hoveredHour()?.hour === h.hour"
+                     (mouseenter)="setHoveredHour(h)" 
+                     (mouseleave)="setHoveredHour(null)"
+                     (touchstart)="setHoveredHour(h)">
+                  <div class="bar-val-label">{{ h.count > 0 ? h.count : '' }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" [class.has-data]="h.count > 0" [style.height.%]="h.percentage"></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Aufgeräumte, perfekt lesbare Zeitleiste mit Meilensteinen -->
+            <div class="chart-timeline-axis">
+              <div class="timeline-tick"><span>00:00</span></div>
+              <div class="timeline-tick"><span>04:00</span></div>
+              <div class="timeline-tick"><span>08:00</span></div>
+              <div class="timeline-tick"><span>12:00</span></div>
+              <div class="timeline-tick"><span>16:00</span></div>
+              <div class="timeline-tick"><span>20:00</span></div>
+              <div class="timeline-tick"><span>23:00</span></div>
+            </div>
+          </div>
+        </div>
+      }
+
+    } @else {
+      <div class="empty-hint">
+        <p>Community-Statistiken derzeit nicht erreichbar.</p>
+        <button type="button" class="btn-seed-main" (click)="onSeedSampleData()" [disabled]="isSeeding()">
+          ✨ Testdaten generieren
+        </button>
+      </div>
+    }
+
+  </div>
+</div>

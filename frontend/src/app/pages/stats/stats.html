@@ -3,16 +3,34 @@
 
     <div class="stats-header">
       <div class="header-titles">
-        <h2>📊 Arbeitszeit & Statistiken</h2>
-        <p>Überblick über deine Fokuszeiten und Pomodoro-Sessions</p>
+        <h2>📊 Meine Statistiken</h2>
+        <p>Überblick über deine persönlichen Fokuszeiten & Gewohnheiten</p>
       </div>
       <button type="button" class="btn-back-header" routerLink="/timer" title="Zurück zum Timer">
         ← Zurück
       </button>
     </div>
 
-    <!-- Schnellübersicht (KPI Cards) -->
+    <!-- KPI Grid mit Streak & Peak-Hour -->
     <div class="kpi-grid">
+      <div class="kpi-card highlight-streak">
+        <span class="kpi-icon">🔥</span>
+        <div class="kpi-info">
+          <span class="kpi-label">Streak</span>
+          <span class="kpi-value">
+            {{ currentStreakDays() }} {{ currentStreakDays() === 1 ? 'Tag' : 'Tage' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <span class="kpi-icon">⏰</span>
+        <div class="kpi-info">
+          <span class="kpi-label">Top Fokuszeit</span>
+          <span class="kpi-value">{{ peakHourLabel() }}</span>
+        </div>
+      </div>
+
       <div class="kpi-card">
         <span class="kpi-icon">📅</span>
         <div class="kpi-info">
@@ -28,49 +46,71 @@
           <span class="kpi-value">{{ formatSeconds(weekWorkedSeconds()) }}</span>
         </div>
       </div>
-
-      <div class="kpi-card">
-        <span class="kpi-icon">🔢</span>
-        <div class="kpi-info">
-          <span class="kpi-label">Sessions</span>
-          <span class="kpi-value">{{ totalSessionsCount() }}</span>
-        </div>
-      </div>
-
-      <div class="kpi-card">
-        <span class="kpi-icon">⏱️</span>
-        <div class="kpi-info">
-          <span class="kpi-label">Gesamtzeit</span>
-          <span class="kpi-value">{{ formatSeconds(totalWorkedSeconds()) }}</span>
-        </div>
-      </div>
     </div>
 
-    <!-- 7-Tage Balkendiagramm -->
-    <div class="chart-section">
-      <div class="section-title-row">
-        <h3>Letzte 7 Tage</h3>
-        <span class="chart-subtitle">Fokuszeit pro Tag</span>
-      </div>
-
-      <div class="chart-scroll-container">
-        <div class="chart-wrapper">
-          <div class="chart-bars">
-            @for (day of chartData(); track day.dateLabel) {
-              <div class="bar-col" [class.is-today]="day.isToday">
-                <div class="bar-val-label">{{ day.formattedDuration }}</div>
-                <div class="bar-track">
-                  <div class="bar-fill" [class.has-data]="day.seconds > 0" [style.height.%]="day.percentage"></div>
-                </div>
-                <div class="bar-label-container">
-                  <span class="bar-day">{{ day.dayLabel }}</span>
-                  <span class="bar-date">{{ day.dateLabel }}</span>
-                </div>
-              </div>
+    <!-- Benchmark: Du vs. Community -->
+    @if (communityComparison(); as comp) {
+      <div class="benchmark-card">
+        <div class="benchmark-header">
+          <span class="benchmark-badge">🥊 Du vs. Community</span>
+          <span class="benchmark-headline">
+            @if (comp.isBetterCancel) {
+              🏆 <strong>{{ comp.diffCancelRate }}% niedrigere Abbruchquote</strong> als der weltweite Durchschnitt!
+            } @else {
+              🎯 Du bist <strong>{{ comp.diffCancelRate }}%</strong> hinter dem weltweiten Schnitt. Dranbleiben!
             }
+          </span>
+        </div>
+        <div class="benchmark-bars">
+          <div class="benchmark-row">
+            <span class="bench-label">Du:</span>
+            <div class="bench-track">
+              <div class="bench-fill user-fill" [style.width.%]="100 - comp.userCancelRate"></div>
+            </div>
+            <span class="bench-value">{{ 100 - comp.userCancelRate }}% Erfolg</span>
+          </div>
+          <div class="benchmark-row">
+            <span class="bench-label">Community:</span>
+            <div class="bench-track">
+              <div class="bench-fill comm-fill" [style.width.%]="100 - comp.communityCancelRate"></div>
+            </div>
+            <span class="bench-value">{{ 100 - comp.communityCancelRate }}% Erfolg</span>
           </div>
         </div>
       </div>
+    }
+
+    <!-- Timer-Modi & Erfolgsquoten -->
+    <div class="modes-section">
+      <div class="section-title-row">
+        <h3>Deine Timer-Modi</h3>
+        <span class="chart-subtitle">Nutzung & Erfolgsquote</span>
+      </div>
+
+      @if (userModeStats().length === 0) {
+        <div class="empty-history-small">
+          <p>Starte eine Timer-Session, um Modus-Statistiken zu sammeln.</p>
+        </div>
+      } @else {
+        <div class="mode-rank-list">
+          @for (m of userModeStats(); track m.name) {
+            <div class="mode-rank-card">
+              <div class="mode-rank-header">
+                <span class="mode-rank-name">{{ m.name }}</span>
+                <span class="mode-rank-count">{{ m.totalCount }}x genutzt ({{ m.finishedCount }} abgeschlossen)</span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" [style.width.%]="m.percentage"></div>
+              </div>
+              <div class="mode-rank-footer">
+                <span class="success-rate-badge" [class.high-success]="m.successRate >= 70" [class.low-success]="m.successRate < 50">
+                  Erfolgsquote: {{ m.successRate }}%
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
 
     <!-- Session Historie -->

@@ -6,11 +6,12 @@
     </a>
   </div>
 
-  <!-- Desktop Navigation -->
+  <!-- Desktop Navigation (Clean typography) -->
   <nav class="nav-links desktop-nav">
     <a routerLink="/timer" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Timer</a>
     <a routerLink="/config" routerLinkActive="active">Einstellungen</a>
     <a routerLink="/stats" routerLinkActive="active">Statistik</a>
+    <a routerLink="/community" routerLinkActive="active">Community</a>
   </nav>
 
   <!-- Desktop Auth Status -->
@@ -86,6 +87,10 @@
       <a routerLink="/stats" routerLinkActive="active" (click)="closeMobileMenu()">
         <span class="nav-icon">📊</span>
         <span class="nav-text">Statistik</span>
+      </a>
+      <a routerLink="/community" routerLinkActive="active" (click)="closeMobileMenu()">
+        <span class="nav-icon">🌍</span>
+        <span class="nav-text">Community</span>
       </a>
     </nav>
   </div>

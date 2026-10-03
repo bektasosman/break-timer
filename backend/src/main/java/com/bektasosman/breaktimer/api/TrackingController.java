@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:4200", "https://break-timer-app.onrender.com"})
@@ -15,21 +14,26 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TrackingController {
 
-    // Optional, falls Kafka und TrackingService auf Render deaktiviert sind
-    private final Optional<TrackingService> trackingService;
+    private final TrackingService trackingService;
 
     @GetMapping("/stats")
     public ResponseEntity<TrackingStatsResponse> getGlobalTrackingStats() {
-        if (trackingService.isEmpty()) {
-            // Leere/Default-Antwort zurückgeben, falls Kafka inaktiv ist
-            return ResponseEntity.ok(new TrackingStatsResponse(
-                    0L, 0L, 0L, 0L, 0.0,
-                    "Tracking inaktiv",
-                    "Keine Daten vorhanden",
-                    Map.of(), Map.of(), Map.of(), Map.of()
-            ));
-        }
+        return ResponseEntity.ok(trackingService.getAggregatedStats());
+    }
 
-        return ResponseEntity.ok(trackingService.get().getAggregatedStats());
+    @PostMapping("/seed")
+    public ResponseEntity<TrackingStatsResponse> seedTrackingStats() {
+        return ResponseEntity.ok(trackingService.seedSampleData());
+    }
+
+    @GetMapping("/seed")
+    public ResponseEntity<TrackingStatsResponse> seedTrackingStatsGet() {
+        return ResponseEntity.ok(trackingService.seedSampleData());
+    }
+
+    @PostMapping("/reset")
+    public ResponseEntity<Map<String, String>> resetTrackingStats() {
+        trackingService.resetStats();
+        return ResponseEntity.ok(Map.of("message", "Tracking-Statistiken erfolgreich zurückgesetzt"));
     }
 }

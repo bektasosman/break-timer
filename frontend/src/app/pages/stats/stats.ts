@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TimerSessionService, TimerSessionResponse } from '../../services/timer-session.service';
 import { AuthService } from '../../services/auth.service';
 import { TimerStateService } from '../../services/timer-state.service';
+import { TrackingService, TrackingStatsResponse } from '../../services/tracking.service';
 
 export interface DayChartItem {
   dayLabel: string;
@@ -25,6 +26,24 @@ export interface SessionHistoryItem {
   statusClass: 'finished' | 'cancelled' | 'paused' | 'running';
 }
 
+export interface UserModeStats {
+  name: string;
+  totalCount: number;
+  finishedCount: number;
+  cancelledCount: number;
+  successRate: number;
+  percentage: number;
+}
+
+export interface CommunityComparison {
+  userCancelRate: number;
+  communityCancelRate: number;
+  diffCancelRate: number; // negative is better (fewer cancels)
+  isBetterCancel: boolean;
+  communityTotalFinished: number;
+  userTotalFinished: number;
+}
+
 @Component({
   selector: 'app-stats',
   standalone: true,
@@ -34,14 +53,29 @@ export interface SessionHistoryItem {
 })
 export class StatsComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
+  private trackingService = inject(TrackingService);
   public authService = inject(AuthService);
   private timerStateService = inject(TimerStateService);
   private document = inject(DOCUMENT);
 
+  // Core KPIs
   protected totalWorkedSeconds = signal<number>(0);
   protected todayWorkedSeconds = signal<number>(0);
   protected weekWorkedSeconds = signal<number>(0);
   protected totalSessionsCount = signal<number>(0);
+
+  // Feature 1: Streak Counter
+  protected currentStreakDays = signal<number>(0);
+
+  // Feature 2: Peak-Hour
+  protected peakHourLabel = signal<string>('-');
+
+  // Feature 3: Mode Stats
+  protected userModeStats = signal<UserModeStats[]>([]);
+
+  // Feature 4: Du vs. Community
+  protected communityComparison = signal<CommunityComparison | null>(null);
+  protected communityStats = signal<TrackingStatsResponse | null>(null);
 
   protected chartData = signal<DayChartItem[]>([]);
   protected sessionHistory = signal<SessionHistoryItem[]>([]);
@@ -50,6 +84,10 @@ export class StatsComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const sessions = this.sessionService.sessions();
+      const cachedCommunity = this.trackingService.cachedStats();
+      if (cachedCommunity) {
+        this.communityStats.set(cachedCommunity);
+      }
       this.processSessions(sessions || []);
     });
   }
@@ -66,6 +104,15 @@ export class StatsComponent implements OnInit, OnDestroy {
     this.sessionService.loadAll().subscribe({
       next: () => this.isLoading.set(false),
       error: () => this.isLoading.set(false)
+    });
+
+    // Load community stats for live benchmark comparison
+    this.trackingService.loadStats().subscribe({
+      next: (comm) => {
+        this.communityStats.set(comm);
+        this.updateCommunityComparison();
+      },
+      error: () => {}
     });
   }
 
@@ -89,6 +136,15 @@ export class StatsComponent implements OnInit, OnDestroy {
     const last7DaysMap = new Map<string, number>();
     const dayList: { date: Date; key: string }[] = [];
 
+    // Distinct dates set for streak calculation
+    const activeDatesSet = new Set<string>();
+
+    // Start-hour distribution for peak-hour
+    const hourCounts: { [hour: number]: number } = {};
+
+    // Mode counters
+    const modeCounts: { [name: string]: { total: number; finished: number; cancelled: number } } = {};
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(todayStart);
       d.setDate(d.getDate() - i);
@@ -99,10 +155,8 @@ export class StatsComponent implements OnInit, OnDestroy {
 
     sessions.forEach(s => {
       const workedSec = this.sessionService.parseIsoToSeconds(s.workedDuration);
-
       totalSeconds += workedSec;
 
-      // Priorität für das Datum: startedAt -> currentStartTime -> finishedAt -> id
       const dateRaw = s.startedAt || s.currentStartTime || s.finishedAt || (typeof s.id === 'number' && s.id > 1000000000000 ? s.id : null);
       const sessionDate = dateRaw ? new Date(dateRaw) : new Date();
       const sessionTimestamp = sessionDate.getTime();
@@ -119,6 +173,26 @@ export class StatsComponent implements OnInit, OnDestroy {
         last7DaysMap.set(key, (last7DaysMap.get(key) || 0) + workedSec);
       }
 
+      if (workedSec > 0 || s.status === 'FINISHED') {
+        activeDatesSet.add(key);
+      }
+
+      // Track hour
+      const hour = sessionDate.getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+
+      // Track mode
+      const modeName = s.configName || s.timerConfig?.name || 'Standard Pomodoro';
+      if (!modeCounts[modeName]) {
+        modeCounts[modeName] = { total: 0, finished: 0, cancelled: 0 };
+      }
+      modeCounts[modeName].total++;
+      if (s.status === 'FINISHED') {
+        modeCounts[modeName].finished++;
+      } else if (s.status === 'CANCELLED') {
+        modeCounts[modeName].cancelled++;
+      }
+
       let statusLabel = 'Pausiert';
       let statusClass: 'finished' | 'cancelled' | 'paused' | 'running' = 'paused';
 
@@ -133,11 +207,9 @@ export class StatsComponent implements OnInit, OnDestroy {
         statusClass = 'paused';
       }
 
-      const displayName = s.configName || s.timerConfig?.name || 'Pomodoro Session';
-
       historyItems.push({
         id: s.id,
-        configName: displayName,
+        configName: modeName,
         dateStr: this.formatDateTime(sessionDate),
         timestamp: sessionTimestamp,
         durationFormatted: this.formatSeconds(workedSec),
@@ -147,8 +219,45 @@ export class StatsComponent implements OnInit, OnDestroy {
       });
     });
 
-    // Neueste Sessions immer ganz oben
     historyItems.sort((a, b) => b.timestamp - a.timestamp);
+
+    // 1. Calculate Streak
+    this.currentStreakDays.set(this.calculateStreak(activeDatesSet));
+
+    // 2. Calculate Peak Hour
+    let bestHour = -1;
+    let maxHourCount = 0;
+    for (let h = 0; h < 24; h++) {
+      if ((hourCounts[h] || 0) > maxHourCount) {
+        maxHourCount = hourCounts[h];
+        bestHour = h;
+      }
+    }
+    if (bestHour >= 0 && maxHourCount > 0) {
+      const hStr = bestHour < 10 ? '0' + bestHour : '' + bestHour;
+      const nextH = (bestHour + 1) < 10 ? '0' + (bestHour + 1) : '' + (bestHour + 1);
+      this.peakHourLabel.set(hStr + ':00 - ' + nextH + ':00');
+    } else {
+      this.peakHourLabel.set('-');
+    }
+
+    // 3. Calculate Mode Stats
+    const maxModeCount = Math.max(...Object.values(modeCounts).map(m => m.total), 1);
+    const modeList: UserModeStats[] = Object.keys(modeCounts).map(name => {
+      const m = modeCounts[name];
+      const finished = m.finished;
+      const successRate = m.total > 0 ? Math.round((finished / m.total) * 100) : 0;
+      return {
+        name,
+        totalCount: m.total,
+        finishedCount: finished,
+        cancelledCount: m.cancelled,
+        successRate,
+        percentage: Math.round((m.total / maxModeCount) * 100)
+      };
+    });
+    modeList.sort((a, b) => b.totalCount - a.totalCount);
+    this.userModeStats.set(modeList);
 
     const maxSec = Math.max(...Array.from(last7DaysMap.values()), 1800);
     const chartItems: DayChartItem[] = dayList.map(item => {
@@ -157,7 +266,7 @@ export class StatsComponent implements OnInit, OnDestroy {
       const weekdayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
       return {
         dayLabel: weekdayNames[item.date.getDay()],
-        dateLabel: `${this.padZero(item.date.getDate())}.${this.padZero(item.date.getMonth() + 1)}.`,
+        dateLabel: (item.date.getDate() < 10 ? '0' + item.date.getDate() : '' + item.date.getDate()) + '.' + ((item.date.getMonth() + 1) < 10 ? '0' + (item.date.getMonth() + 1) : '' + (item.date.getMonth() + 1)) + '.',
         seconds: sec,
         formattedDuration: this.formatSecondsCompact(sec),
         percentage: (maxSec > 0 && sec > 0) ? Math.max(5, Math.min(100, Math.round((sec / maxSec) * 100))) : 0,
@@ -171,6 +280,63 @@ export class StatsComponent implements OnInit, OnDestroy {
     this.totalSessionsCount.set(sessions.length);
     this.chartData.set(chartItems);
     this.sessionHistory.set(historyItems);
+
+    this.updateCommunityComparison();
+  }
+
+  private calculateStreak(activeDates: Set<string>): number {
+    if (activeDates.size === 0) return 0;
+
+    const today = new Date();
+    const todayKey = this.getDateKey(today);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = this.getDateKey(yesterday);
+
+    let streak = 0;
+    let checkDate = new Date(today);
+
+    // If active today, start checking from today. If not yet today, start checking from yesterday.
+    if (activeDates.has(todayKey)) {
+      checkDate = new Date(today);
+    } else if (activeDates.has(yesterdayKey)) {
+      checkDate = new Date(yesterday);
+    } else {
+      return 0;
+    }
+
+    while (activeDates.has(this.getDateKey(checkDate))) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return streak;
+  }
+
+  private updateCommunityComparison(): void {
+    const comm = this.communityStats();
+    const history = this.sessionHistory();
+    if (!comm || history.length === 0) {
+      this.communityComparison.set(null);
+      return;
+    }
+
+    const totalSessions = history.length;
+    const cancelledSessions = history.filter(s => s.statusClass === 'cancelled').length;
+    const finishedSessions = history.filter(s => s.statusClass === 'finished').length;
+    const userCancelRate = totalSessions > 0 ? Math.round((cancelledSessions / totalSessions) * 100) : 0;
+    const communityCancelRate = comm.overallCancellationRate || 0;
+    const diff = userCancelRate - communityCancelRate;
+
+    this.communityComparison.set({
+      userCancelRate,
+      communityCancelRate,
+      diffCancelRate: Math.abs(diff),
+      isBetterCancel: diff <= 0,
+      communityTotalFinished: comm.totalFinishedTimers || 0,
+      userTotalFinished: finishedSessions
+    });
   }
 
   protected clearStats(): void {
@@ -192,12 +358,12 @@ export class StatsComponent implements OnInit, OnDestroy {
     const seconds = totalSeconds % 60;
 
     if (hours > 0) {
-      return `${hours} Std. ${minutes}m${seconds > 0 ? ' ' + seconds + 's' : ''}`;
+      return hours + ' Std. ' + minutes + 'm' + (seconds > 0 ? ' ' + seconds + 's' : '');
     }
     if (minutes > 0) {
-      return `${minutes} Min.${seconds > 0 ? ' ' + seconds + 's' : ''}`;
+      return minutes + ' Min.' + (seconds > 0 ? ' ' + seconds + 's' : '');
     }
-    return `${seconds} Sek.`;
+    return seconds + ' Sek.';
   }
 
   protected formatSecondsCompact(totalSeconds: number): string {
@@ -206,30 +372,30 @@ export class StatsComponent implements OnInit, OnDestroy {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return hours + 'h ' + minutes + 'm';
     }
     if (minutes > 0) {
-      return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+      return seconds > 0 ? (minutes + 'm ' + seconds + 's') : (minutes + 'm');
     }
-    return `${seconds}s`;
+    return seconds + 's';
   }
 
   private getDateKey(d: Date): string {
-    return `${d.getFullYear()}-${this.padZero(d.getMonth() + 1)}-${this.padZero(d.getDate())}`;
+    return d.getFullYear() + '-' + (d.getMonth() + 1 < 10 ? '0' + (d.getMonth() + 1) : '' + (d.getMonth() + 1)) + '-' + (d.getDate() < 10 ? '0' + d.getDate() : '' + d.getDate());
   }
 
   private formatDateTime(d: Date): string {
     const today = new Date();
     const isToday = this.getDateKey(d) === this.getDateKey(today);
-    const timeStr = `${this.padZero(d.getHours())}:${this.padZero(d.getMinutes())}`;
+    const hoursStr = d.getHours() < 10 ? '0' + d.getHours() : '' + d.getHours();
+    const minStr = d.getMinutes() < 10 ? '0' + d.getMinutes() : '' + d.getMinutes();
+    const timeStr = hoursStr + ':' + minStr;
 
     if (isToday) {
-      return `Heute, ${timeStr}`;
+      return 'Heute, ' + timeStr;
     }
-    return `${this.padZero(d.getDate())}.${this.padZero(d.getMonth() + 1)}., ${timeStr}`;
-  }
-
-  private padZero(n: number): string {
-    return n < 10 ? `0${n}` : `${n}`;
+    const dayStr = d.getDate() < 10 ? '0' + d.getDate() : '' + d.getDate();
+    const monthStr = (d.getMonth() + 1) < 10 ? '0' + (d.getMonth() + 1) : '' + (d.getMonth() + 1);
+    return dayStr + '.' + monthStr + '., ' + timeStr;
   }
 }

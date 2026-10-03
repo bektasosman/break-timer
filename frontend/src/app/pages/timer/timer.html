@@ -1,18 +1,25 @@
 <div class="timer-card">
-  <!-- Quick-Actions oben rechts (Glas-Look) -->
-  <div class="timer-card-icons">
-    <a routerLink="/stats" class="icon-action-btn" title="Statistiken ansehen" aria-label="Statistiken">
-      <span class="btn-icon">📊</span>
-    </a>
-    <a routerLink="/config" class="icon-action-btn gear-btn" title="Einstellungen öffnen" aria-label="Einstellungen">
-      <span class="btn-icon">⚙️</span>
-    </a>
-  </div>
-  
-  <!-- Das Tab-Menü oben -->
-  <div class="timer-tabs">
-    <button type="button" [class.active]="activeTab() === 'work'" (click)="switchTab('work')">Work</button>
-    <button type="button" [class.active]="activeTab() === 'break'" (click)="switchTab('break')">Break</button>
+  <!-- Obere Leiste: Links Einstellungen, Mitte Work/Break Tabs, Rechts Stats & Community -->
+  <div class="timer-card-header">
+    <div class="header-left">
+      <a routerLink="/config" class="icon-action-btn gear-btn" title="Einstellungen" aria-label="Einstellungen">
+        <span class="btn-icon">⚙️</span>
+      </a>
+    </div>
+
+    <div class="timer-tabs">
+      <button type="button" [class.active]="activeTab() === 'work'" (click)="switchTab('work')">Work</button>
+      <button type="button" [class.active]="activeTab() === 'break'" (click)="switchTab('break')">Break</button>
+    </div>
+
+    <div class="header-right">
+      <a routerLink="/stats" class="icon-action-btn" title="Meine Statistiken" aria-label="Statistiken">
+        <span class="btn-icon">📊</span>
+      </a>
+      <a routerLink="/community" class="icon-action-btn" title="Community Insights" aria-label="Community">
+        <span class="btn-icon">🌍</span>
+      </a>
+    </div>
   </div>
 
   <!-- Die Zeitanzeige -->
