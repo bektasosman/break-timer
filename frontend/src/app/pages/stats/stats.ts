@@ -31,6 +31,7 @@ export interface UserModeStats {
   totalCount: number;
   finishedCount: number;
   cancelledCount: number;
+  cancellationRate: number;
   successRate: number;
   percentage: number;
 }
@@ -246,12 +247,14 @@ export class StatsComponent implements OnInit, OnDestroy {
     const modeList: UserModeStats[] = Object.keys(modeCounts).map(name => {
       const m = modeCounts[name];
       const finished = m.finished;
+      const cancellationRate = m.total > 0 ? Math.round((m.cancelled / m.total) * 100) : 0;
       const successRate = m.total > 0 ? Math.round((finished / m.total) * 100) : 0;
       return {
         name,
         totalCount: m.total,
         finishedCount: finished,
         cancelledCount: m.cancelled,
+        cancellationRate,
         successRate,
         percentage: Math.round((m.total / maxModeCount) * 100)
       };

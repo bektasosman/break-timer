@@ -84,7 +84,7 @@
     <div class="modes-section">
       <div class="section-title-row">
         <h3>Deine Timer-Modi</h3>
-        <span class="chart-subtitle">Nutzung & Erfolgsquote</span>
+        <span class="chart-subtitle">Nutzung & Abbruchquote</span>
       </div>
 
       @if (userModeStats().length === 0) {
@@ -103,8 +103,8 @@
                 <div class="progress-bar-fill" [style.width.%]="m.percentage"></div>
               </div>
               <div class="mode-rank-footer">
-                <span class="success-rate-badge" [class.high-success]="m.successRate >= 70" [class.low-success]="m.successRate < 50">
-                  Erfolgsquote: {{ m.successRate }}%
+                <span class="cancel-rate-badge" [class.warning]="m.cancellationRate > 30">
+                  Abbruchquote: {{ m.cancellationRate }}%
                 </span>
               </div>
             </div>
