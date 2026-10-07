@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TimerSessionService } from '../../services/timer-session.service';
 import { TimerConfigService, TimerConfigResponse } from '../../services/timer-config.service';
 import { TimerStateService, SavedTimerState } from '../../services/timer-state.service';
+import { TrackingService } from '../../services/tracking.service';
 
 @Component({
   selector: 'app-root-timer',
@@ -16,11 +17,13 @@ export class TimerComponent implements OnInit, OnDestroy {
   private sessionService = inject(TimerSessionService);
   private configService = inject(TimerConfigService);
   private timerStateService = inject(TimerStateService);
+  private trackingService = inject(TrackingService);
   private document = inject(DOCUMENT);
 
   protected activeTab = signal<'work' | 'break'>('work');
   protected status = signal<'RUNNING' | 'PAUSED' | 'IDLE'>('IDLE');
   protected displayTime = signal('25:00');
+  protected globalSessionsCount = signal<number>(0);
 
   protected currentSessionId: number | null = null;
   private activeConfigId: number | null = null;
@@ -33,6 +36,19 @@ export class TimerComponent implements OnInit, OnDestroy {
     const savedTab = (this.getItem('activeTimerTab') as 'work' | 'break') || 'work';
     this.activeTab.set(savedTab);
     this.updateTheme(savedTab);
+
+    const cachedStats = this.trackingService.cachedStats();
+    if (cachedStats && cachedStats.totalEventsCount) {
+      this.globalSessionsCount.set(cachedStats.totalEventsCount);
+    }
+    this.trackingService.loadStats().subscribe({
+      next: (stats) => {
+        if (stats && stats.totalEventsCount) {
+          this.globalSessionsCount.set(stats.totalEventsCount);
+        }
+      },
+      error: () => {}
+    });
 
     const savedState = this.timerStateService.getTimerState();
 

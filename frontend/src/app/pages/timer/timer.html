@@ -37,4 +37,17 @@
       ⏭ Skip
     </button>
   </div>
+
+  <!-- Social Proof Live Badge -->
+  <a routerLink="/community" class="social-proof-badge" title="Community Live-Insights ansehen">
+    <span class="live-pulse-dot"></span>
+    <span class="badge-text">
+      @if (globalSessionsCount() > 0) {
+        <strong>{{ globalSessionsCount() }}</strong> Fokus-Sessions weltweit aktiv
+      } @else {
+        Live Community aktiv
+      }
+    </span>
+    <span class="badge-arrow">→</span>
+  </a>
 </div>
