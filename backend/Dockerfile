@@ -1,7 +1,9 @@
 # Stufe 1: Das Projekt mit Maven und Java 21 bauen
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY . .
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stufe 2: Die App mit einer schlanken Java 21 Laufzeit starten
