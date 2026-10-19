@@ -42,3 +42,4 @@ cd frontend
 npm install
 ng serve               # Startet Angular auf http://localhost:4200
 ```
+
